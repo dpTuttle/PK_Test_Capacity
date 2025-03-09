@@ -4,7 +4,3 @@ matplotlib
 seaborn
 plotly
 gunicorn
-base64
-os
-csv
-math
