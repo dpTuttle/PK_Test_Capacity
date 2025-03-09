@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Capacity Planner</title>
+  <!-- Include a modern Google Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;700&display=swap" rel="stylesheet">
+
+  <!-- Example styling to give a Tableau-like feel -->
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Montserrat', sans-serif;
+      background-color: #f6f7f9; /* Light grey background, like Tableau */
+      color: #333; /* Dark grey text */
+    }
+    header {
+      display: flex;
+      align-items: center;
+      background-color: rgb(246, 245, 245); /* black background from the brand colors */
+      padding: 10px 20px;
+    }
+    header img {
+      height: 60px;
+      margin-right: 20px;
+    }
+    header h1 {
+      color: rgb(7, 2, 60); /* White text for contrast */
+      font-weight: 700;
+      margin: 0;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .card {
+      background: #fff; 
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+      padding: 20px;
+    }
+    .card h2 {
+      margin-top: 0;
+      color: #333;
+    }
+    label {
+      display: inline-block;
+      width: 180px;
+      font-weight: 500;
+    }
+    input[type="number"], input[type="text"], select {
+      padding: 6px 10px;
+      margin: 4px 0;
+      width: 200px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      background-color: #005fb8; /* A brighter brand-like blue */
+      color: #fff;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background-color: #004c91; /* Darken on hover */
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+      padding: 8px;
+    }
+    .hidden { 
+      display: none; 
+    }
+    #heatmapImg {
+      width: 100%;
+      max-width: 600px; 
+      display: block;
+      margin: 20px auto;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    #message {
+      font-size: 1.1rem;
+      font-weight: 500;
+      margin: 10px 0;
+    }
+    /* Row deletion button style */
+    .deleteRow {
+      background-color: #ccc;
+      color: #333;
+      padding: 4px 8px;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      margin-left: 10px;
+    }
+    .deleteRow:hover {
+      background-color: #bbb;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header with Company Logo & Title -->
+  <header>
+    <!-- Make sure your logo is in 'static/logo-color.png' -->
+    <img src="/static/logo-color.png" alt="Company Logo">
+    <h1>Capacity Planner Dashboard</h1>
+  </header>
+
+  <div class="container">
+    <!-- Example Card 1: Excel Upload -->
+    <div class="card">
+      <h2>Upload Excel (Optional)</h2>
+      <input type="file" id="excelFile">
+      <button id="uploadExcelBtn">Upload Excel</button>
+      <div id="uploadMsg" style="color:green; margin-top:10px;"></div>
+    </div>
+
+    <!-- Example Card 2: Shift Scheduling & Timescale -->
+    <div class="card">
+      <h2>Shift Scheduling & Time Scale</h2>
+      <div style="margin-bottom: 10px;">
+        <label for="shiftsPerDay">Shifts per Day:</label>
+        <input type="number" id="shiftsPerDay" value="1" step="1" min="1">
+
+        <label for="hoursPerShift">Hours per Shift:</label>
+        <input type="number" id="hoursPerShift" value="8" step="1" min="1">
+      </div>
+      <div style="margin-bottom: 10px;">
+        <label for="timescaleSelect">Time Scale:</label>
+        <select id="timescaleSelect">
+          <option value="annual">Annual</option>
+          <option value="monthly" selected>Monthly</option>
+          <option value="weekly">Weekly</option>
+          <option value="daily">Daily</option>
+        </select>
+
+        <label for="equipThroughput">Equip Throughput (units/machine/hr):</label>
+        <input type="number" id="equipThroughput" step="0.1" value="1.0">
+      </div>
+    </div>
+
+    <!-- Example Card 3: Process Table -->
+    <div class="card">
+      <h2>Process Table (Manual Entry)</h2>
+      <table id="processTable">
+        <thead>
+          <tr>
+            <th>Process Name</th>
+            <th>Cycle Time (hr/unit)</th>
+            <th>Labor Headcount</th>
+            <th>Equipment</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><input type="text" value="Assembly"></td>
+            <td><input type="number" step="0.1" value="0.5"></td>
+            <td><input type="number" step="1" value="10"></td>
+            <td><input type="number" step="1" value="5"></td>
+            <td><button class="deleteRow">X</button></td>
+          </tr>
+          <tr>
+            <td><input type="text" value="Quality Control"></td>
+            <td><input type="number" step="0.1" value="0.2"></td>
+            <td><input type="number" step="1" value="4"></td>
+            <td><input type="number" step="1" value="3"></td>
+            <td><button class="deleteRow">X</button></td>
+          </tr>
+          <tr>
+            <td><input type="text" value="Packaging"></td>
+            <td><input type="number" step="0.1" value="0.3"></td>
+            <td><input type="number" step="1" value="6"></td>
+            <td><input type="number" step="1" value="4"></td>
+            <td><button class="deleteRow">X</button></td>
+          </tr>
+        </tbody>
+      </table>
+      <button id="addRowBtn" style="margin-top: 10px;">Add Process</button>
+    </div>
+
+    <!-- Example Card 4: Scenario Selection -->
+    <div class="card">
+      <h2>Choose Scenario</h2>
+      <select id="scenarioSelect">
+        <option value="max_throughput">Max Throughput</option>
+        <option value="desired_units">Desired Units</option>
+      </select>
+      <div id="desiredUnitsContainer" class="hidden" style="margin-top:10px;">
+        <label>Desired Units:</label>
+        <input type="number" id="desiredUnits" step="100" value="3000">
+      </div>
+      <br>
+      <button id="runCalcBtn">Run Calculation</button>
+    </div>
+
+    <!-- Results -->
+    <div class="card" style="padding: 20px;">
+      <h2>Results</h2>
+      <div id="message"></div>
+      <img id="heatmapImg" src="" class="hidden" alt="Heatmap">
+      <table id="resultsTable" class="hidden" style="margin-top:20px;">
+        <thead>
+          <tr id="resultsHeaderRow"></tr>
+        </thead>
+        <tbody id="resultsBody"></tbody>
+      </table>
+      <button id="downloadBtn" class="hidden" style="margin-top:10px;">Download Setup CSV</button>
+    </div>
+  </div>
+
+  <!-- Put the existing JS code here (fetch calls, event listeners, etc.) -->
+  <script>
+    // Show/hide "Desired Units" input
+    const scenarioSelect = document.getElementById('scenarioSelect');
+    const desiredUnitsContainer = document.getElementById('desiredUnitsContainer');
+    scenarioSelect.addEventListener('change', () => {
+      if (scenarioSelect.value === 'desired_units') {
+        desiredUnitsContainer.classList.remove('hidden');
+      } else {
+        desiredUnitsContainer.classList.add('hidden');
+      }
+    });
+
+    // Add row
+    document.getElementById('addRowBtn').addEventListener('click', () => {
+      const tbody = document.querySelector('#processTable tbody');
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><input type="text" value="New Process"></td>
+        <td><input type="number" step="0.1" value="1.0"></td>
+        <td><input type="number" step="1" value="5"></td>
+        <td><input type="number" step="1" value="3"></td>
+        <td><button class="deleteRow">X</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    // Delete row
+    document.addEventListener('click', (e) => {
+      if (e.target.classList.contains('deleteRow')) {
+        e.target.closest('tr').remove();
+      }
+    });
+
+    // Upload Excel
+    document.getElementById('uploadExcelBtn').addEventListener('click', () => {
+      const fileInput = document.getElementById('excelFile');
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      const formData = new FormData();
+      formData.append('excelFile', file);
+
+      fetch('/upload_excel', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.error) {
+          document.getElementById('uploadMsg').textContent = data.error;
+        } else {
+          document.getElementById('uploadMsg').textContent = 'Excel data loaded!';
+          // Populate table
+          const tbody = document.querySelector('#processTable tbody');
+          tbody.innerHTML = '';
+          data.processData.forEach(p => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td><input type="text" value="${p.name}"></td>
+              <td><input type="number" step="0.1" value="${p.cycle_time}"></td>
+              <td><input type="number" step="1" value="${p.labor}"></td>
+              <td><input type="number" step="1" value="${p.equipment}"></td>
+              <td><button class="deleteRow">X</button></td>
+            `;
+            tbody.appendChild(tr);
+          });
+        }
+      })
+      .catch(err => console.log(err));
+    });
+
+    // Run Calculation
+    document.getElementById('runCalcBtn').addEventListener('click', () => {
+      const shiftsPerDay = parseFloat(document.getElementById('shiftsPerDay').value);
+      const hoursPerShift = parseFloat(document.getElementById('hoursPerShift').value);
+      const timescale = document.getElementById('timescaleSelect').value;
+      const equipThroughput = parseFloat(document.getElementById('equipThroughput').value);
+      const scenario = scenarioSelect.value;
+      let desiredUnitsVal = 0;
+      if (scenario === 'desired_units') {
+        desiredUnitsVal = parseFloat(document.getElementById('desiredUnits').value);
+      }
+
+      // gather process data
+      const rows = document.querySelectorAll('#processTable tbody tr');
+      const processes = [];
+      rows.forEach(row => {
+        const inputs = row.querySelectorAll('input');
+        processes.push({
+          name: inputs[0].value,
+          cycle_time: inputs[1].value,
+          labor: inputs[2].value,
+          equipment: inputs[3].value
+        });
+      });
+
+      const payload = {
+        scenario: scenario,
+        shifts_per_day: shiftsPerDay,
+        hours_per_shift: hoursPerShift,
+        timescale: timescale,
+        equip_throughput: equipThroughput,
+        processes: processes,
+        desired_units: desiredUnitsVal
+      };
+
+      fetch('/calculate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      .then(resp => resp.json())
+      .then(data => {
+        const msgDiv = document.getElementById('message');
+        const heatmapImg = document.getElementById('heatmapImg');
+        const resultsTable = document.getElementById('resultsTable');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        // reset
+        msgDiv.textContent = '';
+        heatmapImg.classList.add('hidden');
+        resultsTable.classList.add('hidden');
+        downloadBtn.classList.add('hidden');
+
+        if (data.error) {
+          msgDiv.style.color = 'red';
+          msgDiv.textContent = data.error;
+          return;
+        }
+        msgDiv.style.color = '#333';
+
+        if (scenario === 'max_throughput') {
+          msgDiv.textContent = data.message || '';
+          if (data.heatmap) {
+            heatmapImg.src = 'data:image/png;base64,' + data.heatmap;
+            heatmapImg.classList.remove('hidden');
+          }
+        } else if (scenario === 'desired_units') {
+          const results = data.results || [];
+          if (results.length > 0) {
+            resultsTable.classList.remove('hidden');
+            const headerRow = document.getElementById('resultsHeaderRow');
+            headerRow.innerHTML = '';
+            const body = document.getElementById('resultsBody');
+            body.innerHTML = '';
+
+            const cols = Object.keys(results[0]);
+            cols.forEach(c => {
+              const th = document.createElement('th');
+              th.textContent = c;
+              headerRow.appendChild(th);
+            });
+
+            results.forEach(r => {
+              const tr = document.createElement('tr');
+              cols.forEach(c => {
+                const td = document.createElement('td');
+                td.textContent = r[c];
+                tr.appendChild(td);
+              });
+              body.appendChild(tr);
+            });
+          }
+          msgDiv.textContent = `For ${desiredUnitsVal} units/${timescale}, see needed labor/equipment below.`;
+
+          if (data.csv_data) {
+            downloadBtn.classList.remove('hidden');
+            downloadBtn.onclick = () => {
+              const formData = new FormData();
+              formData.append('csv_data', data.csv_data);
+              fetch('/download_csv', {
+                method: 'POST',
+                body: formData
+              })
+              .then(async resp => {
+                const blob = await resp.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'ideal_setup.csv';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+              });
+            };
+          }
+        }
+      })
+      .catch(err => console.log(err));
+    });
+  </script>
+
+</body>
+</html>
