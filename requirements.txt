@@ -4,3 +4,8 @@ matplotlib
 seaborn
 plotly
 gunicorn
+io
+base64
+os
+csv
+math
