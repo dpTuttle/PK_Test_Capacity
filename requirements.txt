@@ -5,3 +5,5 @@ seaborn
 plotly
 gunicorn
 openpyxl
+numpy
+requests
