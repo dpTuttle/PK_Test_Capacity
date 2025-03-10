@@ -1,63 +1,64 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Capacity Planner</title>
+  <title>Capacity & Demand Planner</title>
   <!-- Include a modern Google Font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;700&display=swap" rel="stylesheet">
+ 
+ <style>
+    /* ---- Basic Tab Styling ---- */
+    .tab-buttons {
+      margin-bottom: 10px;
+    }
+    .tab-buttons button {
+      display: inline-block;
+      background-color: #f2f2f2;       /* Light gray background */
+      color: #333;                     /* Dark text */
+      padding: 8px 16px;               /* Spacing inside the tab */
+      margin-right: 2px;               /* Gap between tabs */
+      border: 1px solid #ccc;          /* Gray border */
+      border-bottom: none;             /* No bottom border to give a "tab" effect */
+      border-top-left-radius: 8px;     /* Rounded top corners */
+      border-top-right-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      box-shadow: 0 -1px 2px rgba(0,0,0,0.1); /* Subtle shadow above tab */
+      transition: background 0.2s;
+    }
+    .tab-content {
+      display: none; /* Hide all tab content by default */
+    }
+    .active-tab {
+      display: block; /* Show the active tab content */
+    }
+    .tab-buttons button.active {
+      background-color: rgb(87, 112, 235); 
+      color: #fff;
+    }
 
-  <!-- Example styling to give a Tableau-like feel -->
-  <style>
+    /* ---- Shared Styles for the entire page ---- */
     body {
-      margin: 0;
-      padding: 0;
       font-family: 'Montserrat', sans-serif;
-      background-color: #f6f7f9; /* Light grey background, like Tableau */
-      color: #333; /* Dark grey text */
-    }
-    header {
-      display: flex;
-      align-items: center;
-      background-color: rgb(246, 245, 245); /* black background from the brand colors */
-      padding: 10px 20px;
-    }
-    header img {
-      height: 60px;
-      margin-right: 20px;
-    }
-    header h1 {
-      color: rgb(7, 2, 60); /* White text for contrast */
-      font-weight: 700;
-      margin: 0;
-    }
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
+      margin: 0; 
       padding: 20px;
+      background-color: #f6f7f9;
+      color: #333;
     }
-    .card {
+    h1 {
+      margin-top: 0;
+    }
+    h2 {
+      margin-bottom: 0.5rem;
+    }
+    /* Additional card or container styling optional */
+    .card { 
       background: #fff; 
       border-radius: 8px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       margin-bottom: 20px;
       padding: 20px;
-    }
-    .card h2 {
-      margin-top: 0;
-      color: #333;
-    }
-    label {
-      display: inline-block;
-      width: 180px;
-      font-weight: 500;
-    }
-    input[type="number"], input[type="text"], select {
-      padding: 6px 10px;
-      margin: 4px 0;
-      width: 200px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
     }
     button {
       background-color: #005fb8; /* A brighter brand-like blue */
@@ -69,168 +70,212 @@
       font-weight: 600;
       transition: background 0.3s;
     }
-    button:hover {
-      background-color: #004c91; /* Darken on hover */
+    /* Hide the “header” style from the nested HTML snippet to avoid conflicts */
+    header img {
+      height: 60px;
+      margin-right: 20px;
     }
+    header h1 {
+      font-weight: 700;
+      margin: 0;
+      margin-bottom: 20px; /* add however much space you need */
+    }
+
+    /* Table or input styling for each tab as needed */
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 10px;
     }
     th, td {
-      text-align: left;
-      border-bottom: 1px solid #ddd;
+      border: 1px solid #ddd;
       padding: 8px;
     }
-    .hidden { 
-      display: none; 
-    }
-    #heatmapImg {
-      width: 100%;
-      max-width: 600px; 
-      display: block;
-      margin: 20px auto;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-    #message {
-      font-size: 1.1rem;
-      font-weight: 500;
-      margin: 10px 0;
-    }
-    /* Row deletion button style */
-    .deleteRow {
-      background-color: #ccc;
-      color: #333;
-      padding: 4px 8px;
-      border: none;
-      border-radius: 3px;
-      cursor: pointer;
-      font-size: 0.9rem;
-      margin-left: 10px;
-    }
-    .deleteRow:hover {
-      background-color: #bbb;
-    }
+    .hidden { display: none; }
   </style>
+
+  <!-- Optionally load your fonts or external CSS here -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link 
+    href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;700&display=swap" 
+    rel="stylesheet"
+  >
 </head>
 <body>
 
-  <!-- Header with Company Logo & Title -->
   <header>
     <!-- Make sure your logo is in 'static/logo-color.png' -->
     <img src="/static/logo-color.png" alt="Company Logo">
-    <h1>Capacity Planner Dashboard</h1>
+    <h1>Capacity & Demand Planning Dashboard</h1>
   </header>
 
-  <div class="container">
-    <!-- Example Card 1: Excel Upload -->
-    <div class="card">
-      <h2>Upload Excel (Optional)</h2>
-      <input type="file" id="excelFile">
-      <button id="uploadExcelBtn">Upload Excel</button>
-      <div id="uploadMsg" style="color:green; margin-top:10px;"></div>
-    </div>
+  <!-- Buttons to switch between the two tabs -->
+  <div class="tab-buttons">
+    <!-- Button for the first tab -->
+    <button class="active" onclick="showTab(event, 'tab1')">Capacity Planner</button>
+  
+    <!-- Button for the second tab -->
+    <button onclick="showTab(event, 'tab2')">Capacity/Demand Review</button>
+  </div>  
 
-    <!-- Example Card 2: Shift Scheduling & Timescale -->
-    <div class="card">
-      <h2>Shift Scheduling & Time Scale</h2>
-      <div style="margin-bottom: 10px;">
-        <label for="shiftsPerDay">Shifts per Day:</label>
-        <input type="number" id="shiftsPerDay" value="1" step="1" min="1">
-
-        <label for="hoursPerShift">Hours per Shift:</label>
-        <input type="number" id="hoursPerShift" value="8" step="1" min="1">
+  <!-- ====================== TAB 1 (App1) ====================== -->
+  <!-- Tab 1 Content (App1) -->
+  <div id="tab1" class="tab-content active-tab">
+    <!-- We emulate the styling from the snippet: container + card layout -->
+    <div class="container">
+      
+      <!-- Card 1: Excel Upload -->
+      <div class="card">
+        <h2>Upload Excel (Optional)</h2>
+        <input type="file" id="excelFile">
+        <button id="uploadExcelBtn">Upload Excel</button>
+        <div id="uploadMsg" style="color:green; margin-top:10px;"></div>
       </div>
-      <div style="margin-bottom: 10px;">
-        <label for="timescaleSelect">Time Scale:</label>
-        <select id="timescaleSelect">
-          <option value="annual">Annual</option>
-          <option value="monthly" selected>Monthly</option>
-          <option value="weekly">Weekly</option>
-          <option value="daily">Daily</option>
+
+      <!-- Card 2: Shift Scheduling & Timescale -->
+      <div class="card">
+        <h2>Shift Scheduling & Time Scale</h2>
+        <div style="margin-bottom: 10px;">
+          <label for="shiftsPerDay">Shifts per Day:</label>
+          <input type="number" id="shiftsPerDay" value="1" step="1" min="1">
+
+          <label for="hoursPerShift">Hours per Shift:</label>
+          <input type="number" id="hoursPerShift" value="8" step="1" min="1">
+        </div>
+        <div style="margin-bottom: 10px;">
+          <label for="timescaleSelect">Time Scale:</label>
+          <select id="timescaleSelect">
+            <option value="annual">Annual</option>
+            <option value="monthly" selected>Monthly</option>
+            <option value="weekly">Weekly</option>
+            <option value="daily">Daily</option>
+          </select>
+
+          <label for="equipThroughput">Equip Throughput (units/machine/hr):</label>
+          <input type="number" id="equipThroughput" step="0.1" value="1.0">
+        </div>
+      </div>
+
+      <!-- Card 3: Process Table -->
+      <div class="card">
+        <h2>Process Table (Manual Entry)</h2>
+        <table id="processTable">
+          <thead>
+            <tr>
+              <th>Process Name</th>
+              <th>Cycle Time (hr/unit)</th>
+              <th>Labor Headcount</th>
+              <th>Equipment</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><input type="text" value="Assembly"></td>
+              <td><input type="number" step="0.1" value="0.5"></td>
+              <td><input type="number" step="1" value="10"></td>
+              <td><input type="number" step="1" value="5"></td>
+              <td><button class="deleteRow">X</button></td>
+            </tr>
+            <tr>
+              <td><input type="text" value="Quality Control"></td>
+              <td><input type="number" step="0.1" value="0.2"></td>
+              <td><input type="number" step="1" value="4"></td>
+              <td><input type="number" step="1" value="3"></td>
+              <td><button class="deleteRow">X</button></td>
+            </tr>
+            <tr>
+              <td><input type="text" value="Packaging"></td>
+              <td><input type="number" step="0.1" value="0.3"></td>
+              <td><input type="number" step="1" value="6"></td>
+              <td><input type="number" step="1" value="4"></td>
+              <td><button class="deleteRow">X</button></td>
+            </tr>
+          </tbody>
+        </table>
+        <button id="addRowBtn" style="margin-top: 10px;">Add Process</button>
+      </div>
+
+      <!-- Card 4: Scenario Selection -->
+      <div class="card">
+        <h2>Choose Scenario</h2>
+        <select id="scenarioSelect">
+          <option value="max_throughput">Max Throughput</option>
+          <option value="desired_units">Desired Units</option>
         </select>
-
-        <label for="equipThroughput">Equip Throughput (units/machine/hr):</label>
-        <input type="number" id="equipThroughput" step="0.1" value="1.0">
+        <div id="desiredUnitsContainer" class="hidden" style="margin-top:10px;">
+          <label>Desired Units:</label>
+          <input type="number" id="desiredUnits" step="100" value="3000">
+        </div>
+        <br>
+        <button id="runCalcBtn">Run Calculation</button>
       </div>
-    </div>
 
-    <!-- Example Card 3: Process Table -->
-    <div class="card">
-      <h2>Process Table (Manual Entry)</h2>
-      <table id="processTable">
-        <thead>
-          <tr>
-            <th>Process Name</th>
-            <th>Cycle Time (hr/unit)</th>
-            <th>Labor Headcount</th>
-            <th>Equipment</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><input type="text" value="Assembly"></td>
-            <td><input type="number" step="0.1" value="0.5"></td>
-            <td><input type="number" step="1" value="10"></td>
-            <td><input type="number" step="1" value="5"></td>
-            <td><button class="deleteRow">X</button></td>
-          </tr>
-          <tr>
-            <td><input type="text" value="Quality Control"></td>
-            <td><input type="number" step="0.1" value="0.2"></td>
-            <td><input type="number" step="1" value="4"></td>
-            <td><input type="number" step="1" value="3"></td>
-            <td><button class="deleteRow">X</button></td>
-          </tr>
-          <tr>
-            <td><input type="text" value="Packaging"></td>
-            <td><input type="number" step="0.1" value="0.3"></td>
-            <td><input type="number" step="1" value="6"></td>
-            <td><input type="number" step="1" value="4"></td>
-            <td><button class="deleteRow">X</button></td>
-          </tr>
-        </tbody>
-      </table>
-      <button id="addRowBtn" style="margin-top: 10px;">Add Process</button>
-    </div>
-
-    <!-- Example Card 4: Scenario Selection -->
-    <div class="card">
-      <h2>Choose Scenario</h2>
-      <select id="scenarioSelect">
-        <option value="max_throughput">Max Throughput</option>
-        <option value="desired_units">Desired Units</option>
-      </select>
-      <div id="desiredUnitsContainer" class="hidden" style="margin-top:10px;">
-        <label>Desired Units:</label>
-        <input type="number" id="desiredUnits" step="100" value="3000">
+      <!-- Results -->
+      <div class="card" style="padding: 20px;">
+        <h2>Results</h2>
+        <div id="message"></div>
+        <img id="heatmapImg" src="" class="hidden" alt="Heatmap">
+        <table id="resultsTable" class="hidden" style="margin-top:20px;">
+          <thead>
+            <tr id="resultsHeaderRow"></tr>
+          </thead>
+          <tbody id="resultsBody"></tbody>
+        </table>
+        <button id="downloadBtn" class="hidden" style="margin-top:10px;">Download Setup CSV</button>
       </div>
-      <br>
-      <button id="runCalcBtn">Run Calculation</button>
+
+    </div> <!-- end .container -->
+  </div> <!-- end tab1 -->
+
+  <!-- ====================== TAB 2 (App2) ====================== -->
+  <div id="tab2" class="tab-content">
+    <h2>Bullet & Gauge Charts</h2>
+
+    <div class="card">
+      <h3>Upload Capacity Data</h3>
+      <input type="file" id="capacityFile"/>
+      <button id="uploadCapBtn">Upload Capacity</button>
+      <p id="capMsg" style="color:green;"></p>
+    </div>
+    <div class="card">
+      <h3>Upload Demand Data</h3>
+      <input type="file" id="demandFile"/>
+      <button id="uploadDemandBtn">Upload Demand</button>
+      <p id="demMsg" style="color:green;"></p>
     </div>
 
-    <!-- Results -->
-    <div class="card" style="padding: 20px;">
-      <h2>Results</h2>
-      <div id="message"></div>
-      <img id="heatmapImg" src="" class="hidden" alt="Heatmap">
-      <table id="resultsTable" class="hidden" style="margin-top:20px;">
-        <thead>
-          <tr id="resultsHeaderRow"></tr>
-        </thead>
-        <tbody id="resultsBody"></tbody>
-      </table>
-      <button id="downloadBtn" class="hidden" style="margin-top:10px;">Download Setup CSV</button>
+    <div class="card">
+      <h3>View Bullet & Gauge</h3>
+      <button id="visualsBtn">View Charts</button>
     </div>
-  </div>
+  </div> <!-- end tab2 -->
 
-  <!-- Put the existing JS code here (fetch calls, event listeners, etc.) -->
+  <!-- ====================== JS for the Page ====================== -->
   <script>
-    // Show/hide "Desired Units" input
+    // ----- Tab Logic -----
+    function showTab(event, tabId) {
+    // 1) Remove 'active' class from all buttons
+    const allButtons = document.querySelectorAll('.tab-buttons button');
+    allButtons.forEach(btn => btn.classList.remove('active'));
+
+    // 2) Hide all tab contents
+    const allTabs = document.querySelectorAll('.tab-content');
+    allTabs.forEach(tab => tab.classList.remove('active-tab'));
+
+    // 3) Add 'active' class to the clicked button
+    event.currentTarget.classList.add('active');
+
+    // 4) Show the matching tab content
+    const tabToShow = document.getElementById(tabId);
+    tabToShow.classList.add('active-tab');
+    }
+
+    // ----- Shared Logic for "App1" -----
     const scenarioSelect = document.getElementById('scenarioSelect');
     const desiredUnitsContainer = document.getElementById('desiredUnitsContainer');
+
     scenarioSelect.addEventListener('change', () => {
       if (scenarioSelect.value === 'desired_units') {
         desiredUnitsContainer.classList.remove('hidden');
@@ -239,7 +284,6 @@
       }
     });
 
-    // Add row
     document.getElementById('addRowBtn').addEventListener('click', () => {
       const tbody = document.querySelector('#processTable tbody');
       const tr = document.createElement('tr');
@@ -253,64 +297,52 @@
       tbody.appendChild(tr);
     });
 
-    // Delete row
     document.addEventListener('click', (e) => {
       if (e.target.classList.contains('deleteRow')) {
         e.target.closest('tr').remove();
       }
     });
 
-    // Upload Excel
+    // Upload Excel for App1
     document.getElementById('uploadExcelBtn').addEventListener('click', () => {
       const fileInput = document.getElementById('excelFile');
-      const file = fileInput.files[0];
-      if (!file) return;
+      if (!fileInput.files[0]) return;
 
       const formData = new FormData();
-      formData.append('excelFile', file);
+      formData.append('excelFile', fileInput.files[0]);
 
       fetch('/upload_excel', {
         method: 'POST',
         body: formData
       })
-      .then(response => response.json())
+      .then(r => r.json())
       .then(data => {
+        const msg = document.getElementById('uploadMsg');
         if (data.error) {
-          document.getElementById('uploadMsg').textContent = data.error;
+          msg.textContent = data.error;
+          msg.style.color = 'red';
         } else {
-          document.getElementById('uploadMsg').textContent = 'Excel data loaded!';
-          // Populate table
-          const tbody = document.querySelector('#processTable tbody');
-          tbody.innerHTML = '';
-          data.processData.forEach(p => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-              <td><input type="text" value="${p.name}"></td>
-              <td><input type="number" step="0.1" value="${p.cycle_time}"></td>
-              <td><input type="number" step="1" value="${p.labor}"></td>
-              <td><input type="number" step="1" value="${p.equipment}"></td>
-              <td><button class="deleteRow">X</button></td>
-            `;
-            tbody.appendChild(tr);
-          });
+          msg.textContent = 'Excel data loaded!';
+          msg.style.color = 'green';
+          // Optionally update the table with the new data
         }
       })
       .catch(err => console.log(err));
     });
 
-    // Run Calculation
+    // Run Calculation for App1
     document.getElementById('runCalcBtn').addEventListener('click', () => {
       const shiftsPerDay = parseFloat(document.getElementById('shiftsPerDay').value);
       const hoursPerShift = parseFloat(document.getElementById('hoursPerShift').value);
       const timescale = document.getElementById('timescaleSelect').value;
       const equipThroughput = parseFloat(document.getElementById('equipThroughput').value);
-      const scenario = scenarioSelect.value;
+      const scenario = document.getElementById('scenarioSelect').value;
       let desiredUnitsVal = 0;
       if (scenario === 'desired_units') {
         desiredUnitsVal = parseFloat(document.getElementById('desiredUnits').value);
       }
 
-      // gather process data
+      // Gather process data
       const rows = document.querySelectorAll('#processTable tbody tr');
       const processes = [];
       rows.forEach(row => {
@@ -335,17 +367,15 @@
 
       fetch('/calculate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(payload)
       })
-      .then(resp => resp.json())
+      .then(r => r.json())
       .then(data => {
         const msgDiv = document.getElementById('message');
         const heatmapImg = document.getElementById('heatmapImg');
         const resultsTable = document.getElementById('resultsTable');
         const downloadBtn = document.getElementById('downloadBtn');
-
-        // reset
         msgDiv.textContent = '';
         heatmapImg.classList.add('hidden');
         resultsTable.classList.add('hidden');
@@ -365,6 +395,7 @@
             heatmapImg.classList.remove('hidden');
           }
         } else if (scenario === 'desired_units') {
+          msgDiv.textContent = `For ${desiredUnitsVal} units/${timescale}, see needed labor/equipment below.`;
           const results = data.results || [];
           if (results.length > 0) {
             resultsTable.classList.remove('hidden');
@@ -374,33 +405,27 @@
             body.innerHTML = '';
 
             const cols = Object.keys(results[0]);
-            cols.forEach(c => {
+            cols.forEach(col => {
               const th = document.createElement('th');
-              th.textContent = c;
+              th.textContent = col;
               headerRow.appendChild(th);
             });
-
-            results.forEach(r => {
+            results.forEach(obj => {
               const tr = document.createElement('tr');
-              cols.forEach(c => {
+              cols.forEach(col => {
                 const td = document.createElement('td');
-                td.textContent = r[c];
+                td.textContent = obj[col];
                 tr.appendChild(td);
               });
               body.appendChild(tr);
             });
           }
-          msgDiv.textContent = `For ${desiredUnitsVal} units/${timescale}, see needed labor/equipment below.`;
-
           if (data.csv_data) {
             downloadBtn.classList.remove('hidden');
             downloadBtn.onclick = () => {
               const formData = new FormData();
               formData.append('csv_data', data.csv_data);
-              fetch('/download_csv', {
-                method: 'POST',
-                body: formData
-              })
+              fetch('/download_csv', { method:'POST', body: formData })
               .then(async resp => {
                 const blob = await resp.blob();
                 const url = window.URL.createObjectURL(blob);
@@ -417,7 +442,52 @@
       })
       .catch(err => console.log(err));
     });
-  </script>
 
+    // ----- Logic for "App2" -----
+    document.getElementById("uploadCapBtn").addEventListener("click", function(){
+      let fileInput = document.getElementById("capacityFile");
+      if(!fileInput.files[0]) return;
+      let formData = new FormData();
+      formData.append("capacityFile", fileInput.files[0]);
+
+      fetch("/upload_capacity", {method:"POST", body: formData})
+      .then(res => res.json())
+      .then(data => {
+        const capMsg = document.getElementById("capMsg");
+        if(data.error){
+          capMsg.style.color = 'red';
+          capMsg.textContent = data.error;
+        } else {
+          capMsg.style.color = 'green';
+          capMsg.textContent = data.message;
+        }
+      });
+    });
+
+    document.getElementById("uploadDemandBtn").addEventListener("click", function(){
+      let fileInput = document.getElementById("demandFile");
+      if(!fileInput.files[0]) return;
+      let formData = new FormData();
+      formData.append("demandFile", fileInput.files[0]);
+
+      fetch("/upload_demand", {method:"POST", body: formData})
+      .then(res => res.json())
+      .then(data => {
+        const demMsg = document.getElementById("demMsg");
+        if(data.error){
+          demMsg.style.color = 'red';
+          demMsg.textContent = data.error;
+        } else {
+          demMsg.style.color = 'green';
+          demMsg.textContent = data.message;
+        }
+      });
+    });
+
+    // Button to see bullet/gauge charts
+    document.getElementById("visualsBtn").addEventListener("click", function(){
+      window.location.href = "/visuals";
+    });
+  </script>
 </body>
 </html>
