@@ -2,46 +2,50 @@
 <html>
 <head>
   <title>Capacity & Demand Planner</title>
-  <!-- Include a modern Google Font -->
+
+  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;700&display=swap" rel="stylesheet">
- 
- <style>
+  <link 
+    href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;700&display=swap" 
+    rel="stylesheet"
+  >
+
+  <style>
     /* ---- Basic Tab Styling ---- */
     .tab-buttons {
       margin-bottom: 10px;
     }
     .tab-buttons button {
       display: inline-block;
-      background-color: #f2f2f2;       /* Light gray background */
-      color: #333;                     /* Dark text */
-      padding: 8px 16px;               /* Spacing inside the tab */
-      margin-right: 2px;               /* Gap between tabs */
-      border: 1px solid #ccc;          /* Gray border */
-      border-bottom: none;             /* No bottom border to give a "tab" effect */
-      border-top-left-radius: 8px;     /* Rounded top corners */
+      background-color: #f2f2f2; 
+      color: #333;
+      padding: 8px 16px;
+      margin-right: 2px;
+      border: 1px solid #ccc;
+      border-bottom: none;
+      border-top-left-radius: 8px;
       border-top-right-radius: 8px;
       cursor: pointer;
       font-weight: 500;
-      box-shadow: 0 -1px 2px rgba(0,0,0,0.1); /* Subtle shadow above tab */
+      box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.1);
       transition: background 0.2s;
     }
     .tab-content {
-      display: none; /* Hide all tab content by default */
+      display: none; 
     }
     .active-tab {
-      display: block; /* Show the active tab content */
+      display: block; 
     }
     .tab-buttons button.active {
-      background-color: rgb(87, 112, 235); 
+      background-color: rgb(87, 112, 235);
       color: #fff;
     }
 
-    /* ---- Shared Styles for the entire page ---- */
+    /* ---- Shared Styles for Entire Page ---- */
     body {
       font-family: 'Montserrat', sans-serif;
-      margin: 0; 
+      margin: 0;
       padding: 20px;
       background-color: #f6f7f9;
       color: #333;
@@ -52,16 +56,15 @@
     h2 {
       margin-bottom: 0.5rem;
     }
-    /* Additional card or container styling optional */
-    .card { 
-      background: #fff; 
+    .card {
+      background: #fff;
       border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
       margin-bottom: 20px;
       padding: 20px;
     }
     button {
-      background-color: #005fb8; /* A brighter brand-like blue */
+      background-color: #005fb8;
       color: #fff;
       padding: 8px 16px;
       border: none;
@@ -70,7 +73,6 @@
       font-weight: 600;
       transition: background 0.3s;
     }
-    /* Hide the “header” style from the nested HTML snippet to avoid conflicts */
     header img {
       height: 60px;
       margin-right: 20px;
@@ -78,10 +80,8 @@
     header h1 {
       font-weight: 700;
       margin: 0;
-      margin-bottom: 20px; /* add however much space you need */
+      margin-bottom: 20px;
     }
-
-    /* Table or input styling for each tab as needed */
     table {
       width: 100%;
       border-collapse: collapse;
@@ -91,17 +91,26 @@
       border: 1px solid #ddd;
       padding: 8px;
     }
-    .hidden { display: none; }
+    .hidden {
+      display: none;
+    }
+    table.my-forecast-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    table.my-forecast-table th {
+      background-color: #0b3954;
+      color: #fff;
+      padding: 8px;
+    }
+    table.my-forecast-table td {
+      text-align: center;
+      padding: 8px;
+    }
   </style>
-
-  <!-- Optionally load your fonts or external CSS here -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link 
-    href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;700&display=swap" 
-    rel="stylesheet"
-  >
 </head>
+
 <body>
 
   <header>
@@ -110,21 +119,17 @@
     <h1>Capacity & Demand Planning Dashboard</h1>
   </header>
 
-  <!-- Buttons to switch between the two tabs -->
+  <!-- Tab Buttons -->
   <div class="tab-buttons">
-    <!-- Button for the first tab -->
     <button class="active" onclick="showTab(event, 'tab1')">Capacity Planner</button>
-  
-    <!-- Button for the second tab -->
-    <button onclick="showTab(event, 'tab2')">Capacity/Demand Review</button>
-  </div>  
+    <button onclick="showTab(event, 'tab2')">Process Capacity vs Demand</button>
+    <button onclick="showTab(event, 'tab3')">Capacity & Forecast</button>
+  </div>
 
   <!-- ====================== TAB 1 (App1) ====================== -->
-  <!-- Tab 1 Content (App1) -->
   <div id="tab1" class="tab-content active-tab">
-    <!-- We emulate the styling from the snippet: container + card layout -->
     <div class="container">
-      
+
       <!-- Card 1: Excel Upload -->
       <div class="card">
         <h2>Upload Excel (Optional)</h2>
@@ -137,14 +142,14 @@
       <div class="card">
         <h2>Shift Scheduling & Time Scale</h2>
         <div style="margin-bottom: 10px;">
-          <label for="shiftsPerDay">Shifts per Day:</label>
+          <label>Shifts per Day:</label>
           <input type="number" id="shiftsPerDay" value="1" step="1" min="1">
 
-          <label for="hoursPerShift">Hours per Shift:</label>
+          <label>Hours per Shift:</label>
           <input type="number" id="hoursPerShift" value="8" step="1" min="1">
         </div>
         <div style="margin-bottom: 10px;">
-          <label for="timescaleSelect">Time Scale:</label>
+          <label>Time Scale:</label>
           <select id="timescaleSelect">
             <option value="annual">Annual</option>
             <option value="monthly" selected>Monthly</option>
@@ -152,8 +157,18 @@
             <option value="daily">Daily</option>
           </select>
 
-          <label for="equipThroughput">Equip Throughput (units/machine/hr):</label>
+          <label>Equip Throughput (units/machine/hr):</label>
           <input type="number" id="equipThroughput" step="0.1" value="1.0">
+        </div>
+        <div style="margin-bottom: 10px;">
+          <label>Number of Rooms:</label>
+          <input type="number" id="rooms" value="1" step="1" min="1">
+        </div>
+        <div>
+          <label>Max BSC:</label>
+          <input type="number" id="maxBSC" value="1" min="1">
+          <label>Max Incubators:</label>
+          <input type="number" id="maxIncubators" value="1" min="1">
         </div>
       </div>
 
@@ -166,7 +181,8 @@
               <th>Process Name</th>
               <th>Cycle Time (hr/unit)</th>
               <th>Labor Headcount</th>
-              <th>Equipment</th>
+              <th>BSC</th>
+              <th>Incubator</th>
               <th></th>
             </tr>
           </thead>
@@ -176,6 +192,7 @@
               <td><input type="number" step="0.1" value="0.5"></td>
               <td><input type="number" step="1" value="10"></td>
               <td><input type="number" step="1" value="5"></td>
+              <td><input type="number" step="1" value="2"></td>
               <td><button class="deleteRow">X</button></td>
             </tr>
             <tr>
@@ -183,13 +200,15 @@
               <td><input type="number" step="0.1" value="0.2"></td>
               <td><input type="number" step="1" value="4"></td>
               <td><input type="number" step="1" value="3"></td>
+              <td><input type="number" step="1" value="1"></td>
               <td><button class="deleteRow">X</button></td>
             </tr>
             <tr>
               <td><input type="text" value="Packaging"></td>
               <td><input type="number" step="0.1" value="0.3"></td>
               <td><input type="number" step="1" value="6"></td>
-              <td><input type="number" step="1" value="4"></td>
+              <td><input type="number" step="1" value="2"></td>
+              <td><input type="number" step="1" value="2"></td>
               <td><button class="deleteRow">X</button></td>
             </tr>
           </tbody>
@@ -213,7 +232,7 @@
       </div>
 
       <!-- Results -->
-      <div class="card" style="padding: 20px;">
+      <div class="card">
         <h2>Results</h2>
         <div id="message"></div>
         <img id="heatmapImg" src="" class="hidden" alt="Heatmap">
@@ -225,8 +244,7 @@
         </table>
         <button id="downloadBtn" class="hidden" style="margin-top:10px;">Download Setup CSV</button>
       </div>
-
-    </div> <!-- end .container -->
+    </div>
   </div> <!-- end tab1 -->
 
   <!-- ====================== TAB 2 (App2) ====================== -->
@@ -252,27 +270,45 @@
     </div>
   </div> <!-- end tab2 -->
 
-  <!-- ====================== JS for the Page ====================== -->
+  <!-- ====================== TAB 3 (Forecast) ====================== -->
+  <div id="tab3" class="tab-content">
+    <h2>Forecast View</h2>
+
+    <div class="card">
+      <h3>Upload Monthly Demand (Month, Demand):</h3>
+      <input type="file" id="forecastFile" />
+      <button id="uploadForecastBtn">Upload Forecast</button>
+      <p id="forecastMsg"></p>
+    </div>
+
+    <div class="card">
+      <button id="generateForecastBtn">Generate Forecast Table</button>
+    </div>
+
+    <div class="card">
+      <div id="forecastResult"></div>
+    </div>
+  </div> <!-- end tab3 -->
+
   <script>
     // ----- Tab Logic -----
     function showTab(event, tabId) {
-    // 1) Remove 'active' class from all buttons
-    const allButtons = document.querySelectorAll('.tab-buttons button');
-    allButtons.forEach(btn => btn.classList.remove('active'));
+      // Remove 'active' class from all tab buttons
+      const allButtons = document.querySelectorAll('.tab-buttons button');
+      allButtons.forEach(btn => btn.classList.remove('active'));
 
-    // 2) Hide all tab contents
-    const allTabs = document.querySelectorAll('.tab-content');
-    allTabs.forEach(tab => tab.classList.remove('active-tab'));
+      // Hide all tab-content
+      const allTabs = document.querySelectorAll('.tab-content');
+      allTabs.forEach(tab => tab.classList.remove('active-tab'));
 
-    // 3) Add 'active' class to the clicked button
-    event.currentTarget.classList.add('active');
+      // Highlight the clicked button
+      event.currentTarget.classList.add('active');
 
-    // 4) Show the matching tab content
-    const tabToShow = document.getElementById(tabId);
-    tabToShow.classList.add('active-tab');
+      // Show the chosen tab
+      document.getElementById(tabId).classList.add('active-tab');
     }
 
-    // ----- Shared Logic for "App1" -----
+    // ----- Scenario (Tab 1) Logic -----
     const scenarioSelect = document.getElementById('scenarioSelect');
     const desiredUnitsContainer = document.getElementById('desiredUnitsContainer');
 
@@ -284,6 +320,7 @@
       }
     });
 
+    // Add new row to process table
     document.getElementById('addRowBtn').addEventListener('click', () => {
       const tbody = document.querySelector('#processTable tbody');
       const tr = document.createElement('tr');
@@ -292,18 +329,20 @@
         <td><input type="number" step="0.1" value="1.0"></td>
         <td><input type="number" step="1" value="5"></td>
         <td><input type="number" step="1" value="3"></td>
+        <td><input type="number" step="1" value="2"></td>
         <td><button class="deleteRow">X</button></td>
       `;
       tbody.appendChild(tr);
     });
 
+    // Delete row in process table
     document.addEventListener('click', (e) => {
       if (e.target.classList.contains('deleteRow')) {
         e.target.closest('tr').remove();
       }
     });
 
-    // Upload Excel for App1
+    // Upload Excel for Tab 1
     document.getElementById('uploadExcelBtn').addEventListener('click', () => {
       const fileInput = document.getElementById('excelFile');
       if (!fileInput.files[0]) return;
@@ -324,19 +363,23 @@
         } else {
           msg.textContent = 'Excel data loaded!';
           msg.style.color = 'green';
-          // Optionally update the table with the new data
         }
       })
       .catch(err => console.log(err));
     });
 
-    // Run Calculation for App1
+    // Run Calculation for Tab 1
     document.getElementById('runCalcBtn').addEventListener('click', () => {
+      // Gather user inputs
       const shiftsPerDay = parseFloat(document.getElementById('shiftsPerDay').value);
       const hoursPerShift = parseFloat(document.getElementById('hoursPerShift').value);
       const timescale = document.getElementById('timescaleSelect').value;
       const equipThroughput = parseFloat(document.getElementById('equipThroughput').value);
       const scenario = document.getElementById('scenarioSelect').value;
+      const roomsVal = parseFloat(document.getElementById('rooms').value) || 1;
+      const maxBscVal = parseFloat(document.getElementById('maxBSC').value) || 1;
+      const maxIncVal = parseFloat(document.getElementById('maxIncubators').value) || 1;
+
       let desiredUnitsVal = 0;
       if (scenario === 'desired_units') {
         desiredUnitsVal = parseFloat(document.getElementById('desiredUnits').value);
@@ -351,23 +394,29 @@
           name: inputs[0].value,
           cycle_time: inputs[1].value,
           labor: inputs[2].value,
-          equipment: inputs[3].value
+          bsc: inputs[3].value,
+          incubator: inputs[4].value
         });
       });
 
+      // Build the payload
       const payload = {
         scenario: scenario,
         shifts_per_day: shiftsPerDay,
         hours_per_shift: hoursPerShift,
         timescale: timescale,
         equip_throughput: equipThroughput,
+        rooms: roomsVal,
+        max_bsc: maxBscVal,
+        max_incubators: maxIncVal,
         processes: processes,
         desired_units: desiredUnitsVal
       };
 
+      // POST to /calculate
       fetch('/calculate', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       })
       .then(r => r.json())
@@ -376,6 +425,7 @@
         const heatmapImg = document.getElementById('heatmapImg');
         const resultsTable = document.getElementById('resultsTable');
         const downloadBtn = document.getElementById('downloadBtn');
+
         msgDiv.textContent = '';
         heatmapImg.classList.add('hidden');
         resultsTable.classList.add('hidden');
@@ -443,18 +493,19 @@
       .catch(err => console.log(err));
     });
 
-    // ----- Logic for "App2" -----
-    document.getElementById("uploadCapBtn").addEventListener("click", function(){
-      let fileInput = document.getElementById("capacityFile");
-      if(!fileInput.files[0]) return;
-      let formData = new FormData();
+    // ----- Tab 2 Logic -----
+    document.getElementById("uploadCapBtn").addEventListener("click", function() {
+      const fileInput = document.getElementById("capacityFile");
+      if (!fileInput.files[0]) return;
+
+      const formData = new FormData();
       formData.append("capacityFile", fileInput.files[0]);
 
-      fetch("/upload_capacity", {method:"POST", body: formData})
+      fetch("/upload_capacity", { method:"POST", body: formData })
       .then(res => res.json())
       .then(data => {
         const capMsg = document.getElementById("capMsg");
-        if(data.error){
+        if (data.error) {
           capMsg.style.color = 'red';
           capMsg.textContent = data.error;
         } else {
@@ -464,17 +515,18 @@
       });
     });
 
-    document.getElementById("uploadDemandBtn").addEventListener("click", function(){
-      let fileInput = document.getElementById("demandFile");
-      if(!fileInput.files[0]) return;
-      let formData = new FormData();
+    document.getElementById("uploadDemandBtn").addEventListener("click", function() {
+      const fileInput = document.getElementById("demandFile");
+      if (!fileInput.files[0]) return;
+
+      const formData = new FormData();
       formData.append("demandFile", fileInput.files[0]);
 
-      fetch("/upload_demand", {method:"POST", body: formData})
+      fetch("/upload_demand", { method:"POST", body: formData })
       .then(res => res.json())
       .then(data => {
         const demMsg = document.getElementById("demMsg");
-        if(data.error){
+        if (data.error) {
           demMsg.style.color = 'red';
           demMsg.textContent = data.error;
         } else {
@@ -484,9 +536,69 @@
       });
     });
 
-    // Button to see bullet/gauge charts
-    document.getElementById("visualsBtn").addEventListener("click", function(){
+    document.getElementById("visualsBtn").addEventListener("click", function() {
       window.location.href = "/visuals";
+    });
+
+    // ----- Forecast (Tab 3) Logic -----
+    document.getElementById("uploadForecastBtn").addEventListener("click", () => {
+      const fileInput = document.getElementById("forecastFile");
+      if (!fileInput.files[0]) return;
+
+      const formData = new FormData();
+      formData.append("forecastFile", fileInput.files[0]);
+
+      fetch("/upload_forecast_demand", { method:'POST', body: formData })
+      .then(r => r.json())
+      .then(data => {
+        const msg = document.getElementById('forecastMsg');
+        if (data.error) {
+          msg.style.color = 'red';
+          msg.textContent = data.error;
+        } else {
+          msg.style.color = 'green';
+          msg.textContent = data.message;
+        }
+      })
+      .catch(err => console.log(err));
+    });
+
+    // Toggle logic for forecast table
+    function showTotal() {
+      document.querySelectorAll('.capCell').forEach(td => {
+        const baseCap = parseFloat(td.getAttribute('data-basecap')) || 0;
+        td.textContent = baseCap;
+      });
+      document.querySelectorAll('.surplusCell').forEach(td => {
+        const baseSurp = parseFloat(td.getAttribute('data-basesurplus')) || 0;
+        td.textContent = baseSurp;
+      });
+    }
+
+    function showByRoom() {
+      // If needed, read #rooms from your app1_capacity_result or store it globally
+      const rooms = window.forecastRooms || 1;
+
+      document.querySelectorAll('.capCell').forEach(td => {
+        const baseCap = parseFloat(td.getAttribute('data-basecap')) || 0;
+        td.textContent = (baseCap / rooms).toFixed(1);
+      });
+      document.querySelectorAll('.surplusCell').forEach(td => {
+        const baseSurp = parseFloat(td.getAttribute('data-basesurplus')) || 0;
+        td.textContent = (baseSurp / rooms).toFixed(1);
+      });
+    }
+
+    // Generate Forecast Table
+    document.getElementById("generateForecastBtn").addEventListener("click", function() {
+      fetch("/generate_forecast_table")
+      .then(res => res.text())
+      .then(htmlSnippet => {
+        document.getElementById("forecastResult").innerHTML = htmlSnippet;
+      })
+      .catch(err => {
+        console.log("Error generating forecast table:", err);
+      });
     });
   </script>
 </body>
