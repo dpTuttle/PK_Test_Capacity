@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Capacity & Demand Planner</title>
+  <title>ProKidney Capacity</title>
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -125,7 +125,7 @@
   <header>
     <!-- Make sure your logo is in 'static/logo-color.png' -->
     <img src="/static/logo-color.png" alt="Company Logo">
-    <h1>Capacity & Demand Planning Dashboard</h1>
+    <h1>Capacity Planning Dashboard</h1>
   </header>
 
   <!-- Constraint Note -->
@@ -147,6 +147,8 @@
       <!-- Card 1: Excel Upload -->
       <div class="card">
         <h2>Upload Excel (Optional)</h2>
+        <p>This tab allows users to input processes and constraints to determine either: (1) the max available throughput based on current process set-ups or 
+          <br> (2) the required inputs (labor, equipement, etc.) per process to meet desired throughput goals. </p>
         <input type="file" id="excelFile">
         <button id="uploadExcelBtn">Upload Excel</button>
         <div id="uploadMsg" style="color:green; margin-top:10px;"></div>
@@ -264,6 +266,7 @@
   <!-- ====================== TAB 2 (App2) ====================== -->
   <div id="tab2" class="tab-content">
     <h2>Bullet & Gauge Charts</h2>
+    <p>This tab allows users to evaluate individual processes against a process load.</p>
 
     <div class="card">
       <h3>Upload Capacity Data</h3>
@@ -287,6 +290,8 @@
   <!-- ====================== TAB 3 (Forecast) ====================== -->
   <div id="tab3" class="tab-content">
     <h2>Forecast View</h2>
+    <p>This tab allows users to use the max capacity data generated from Tab 1 to compare against the latest demand (monthly).
+      <br> Simply upload your demand file below (Month / Demand).</p>
 
     <div class="card">
       <h3>Upload Monthly Demand (Month, Demand):</h3>
