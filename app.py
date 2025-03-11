@@ -60,7 +60,7 @@ class Process:
         self.bsc = float(bsc)
         self.incubator = float(incubator)
 
-    def capacity_per_period(self, hours_per_period, max_bsc, max_incubators, rooms):
+    def capacity_per_period(self, hours_per_period, max_bsc, max_incubators):
         """
         The capacity is the min of:
           1) labor-based capacity
@@ -80,7 +80,7 @@ class Process:
         else:
             inc_cap = 1e9
 
-        return min(labor_cap, bsc_cap, inc_cap, rooms)
+        return min(labor_cap, bsc_cap, inc_cap)
 
 def get_days_for_timescale(timescale):
     if timescale == "annual":
