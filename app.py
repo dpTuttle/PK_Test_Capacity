@@ -465,10 +465,17 @@ def generate_forecast_table():
         for m in all_months:
             d_val = month_demand_map.get(m, 0)
             surplus = capacity - d_val
+
+            # Round all values to the nearest whole number
+            d_val_rounded = round(d_val)
+            cap_rounded = round(capacity)
+            surplus_rounded = round(surplus)
+
             color = "#d4edda" if surplus >= 0 else "#f8d7da"
-            demand_cells.append(f"<td>{d_val}</td>")
-            cap_cells.append(f"<td>{capacity}</td>")
-            over_cells.append(f'<td style="background-color:{color};">{surplus}</td>')
+
+            demand_cells.append(f"<td>{d_val_rounded}</td>")
+            cap_cells.append(f"<td>{cap_rounded}</td>")
+            over_cells.append(f'<td style="background-color:{color};">{surplus_rounded}</td>')
 
         th_months = "".join(f"<th>{m}</th>" for m in all_months)
         thead_html = f"<tr><th></th>{th_months}</tr>"
