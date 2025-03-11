@@ -92,7 +92,7 @@ class Process:
 
 # ------------------- Tab 1 (App1) Routes -------------------
 
-@app.route("/upload_excel", methods=["POST"])
+@@app.route("/upload_excel", methods=["POST"])
 def upload_excel():
     """
     Expects an Excel file with columns:
@@ -117,13 +117,24 @@ def upload_excel():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
+    # Map Excel columns to expected keys
+    process_data = []
+    for _, row in df.iterrows():
+        process_data.append({
+            "name": row["Process"],
+            "cycle_time": row["Cycle Time (hr/unit)"],
+            "labor": row["Labor Headcount"],
+            "bsc": row["BSC"],
+            "incubator": row["Incubator"]
+        })
+
     uploaded_process_df = df  # Store globally for future calculations
 
     return jsonify({
         "message": "Excel data uploaded successfully!",
         "processData": df.to_dict(orient="records")
     })
-    
+
 @app.route("/calculate", methods=["POST"])
 def calculate():
     global app1_capacity_result
