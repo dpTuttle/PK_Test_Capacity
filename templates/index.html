@@ -151,12 +151,6 @@
       <!-- Card 1: Excel Upload -->
       <p>This tab allows users to input processes and constraints to determine either: (1) the max available throughput based on current process set-ups or 
           <br> (2) the required inputs (labor, equipement, etc.) per process to meet desired throughput goals. </p>
-      <div class="card">
-        <h2>Upload Excel (Optional)</h2>
-        <input type="file" id="excelFile">
-        <button id="uploadExcelBtn">Upload Excel</button>
-        <div id="uploadMsg" style="color:green; margin-top:10px;"></div>
-      </div>
 
       <div class="card">
         <h2>Upload Excel (Optional)</h2>
@@ -250,22 +244,8 @@
         <button id="addRowBtn" style="margin-top: 10px;">Add Process</button>
       </div>
 
-      <!-- Card 4: Scenario Selection -->
-      <div class="card">
-        <h2>Choose Scenario</h2>
-        <select id="scenarioSelect">
-          <option value="max_throughput">Max Throughput</option>
-          <option value="desired_units">Desired Units</option>
-        </select>
-        <div id="desiredUnitsContainer" class="hidden" style="margin-top:10px;">
-          <label>Desired Units:</label>
-          <input type="number" id="desiredUnits" step="100" value="3000">
-        </div>
-        <br>
-        <br>
-        <button id="runCalcBtn">Run Calculation</button>
-      </div>
-
+      <!-- Card 4: Scenario Selection --> 
+      
       <div class="card">
         <h2>Choose Scenario</h2>
         <select id="scenarioSelect">
