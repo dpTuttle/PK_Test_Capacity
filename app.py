@@ -4,11 +4,10 @@ import math
 import base64
 import csv
 from datetime import datetime
-from calendar import monthrange  # Add this import
+from calendar import monthrange
 
 from flask import Flask, render_template, request, jsonify, send_file
 import pandas as pd
-
 
 # Matplotlib and Seaborn for Heatmaps
 import matplotlib
@@ -32,27 +31,64 @@ app = Flask(__name__)
 capacity_df = pd.DataFrame()
 demand_df = pd.DataFrame()
 forecast_demand_df = pd.DataFrame()  # For Tab 3
+uploaded_process_df = pd.DataFrame()  # For storing uploaded Excel data from Tab 1
 
 # Stores final capacity results from Tab 1 (App1) scenario
 # e.g. {"rooms": 2, "timescale": "monthly", "overall_capacity": 5000, "max_bsc": 3, "max_incubators": 2, ...}
 app1_capacity_result = {}
 
-# ------------------- Shared Helper Functions -------------------
+# ------------------- Helper Functions -------------------
+
+def get_days_for_timescale(timescale):
+    if timescale == "annual":
+        return 365
+    elif timescale == "monthly":
+        now = datetime.now()
+        return monthrange(now.year, now.month)[1]
+    elif timescale == "weekly":
+        return 7
+    elif timescale == "daily":
+        return 1
+    return 30  # Default
+
+def build_csv(results):
+    if not results:
+        return ""
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=results[0].keys())
+    writer.writeheader()
+    writer.writerows(results)
+    return output.getvalue()
+
+def generate_heatmap(df, value_col):
+    if df.empty:
+        return ""
+    pivot_df = df.set_index("Process")[[value_col]]
+    plt.figure(figsize=(5, 3))
+    sns.heatmap(pivot_df, annot=True, cmap="Reds", fmt=".1f")
+    plt.title("Process Capacities Heatmap")
+    buf = io.BytesIO()
+    plt.savefig(buf, format="png")
+    buf.seek(0)
+    plt.close()
+    return base64.b64encode(buf.getvalue()).decode("utf-8")
 
 def compute_capacity(row):
     """
-    If your capacity_data.xlsx for bullet/gauge still has "Cycle Time" and "Labor Headcount"
-    but not BSC/incubators, adapt as needed.
+    Compute a simple labor capacity.
+    Here we use a fixed value for hours per month.
+    Adjust as needed.
     """
-    hours_per_month = hours_per_period
-    equip_throughput = 1.0
+    hours_per_month = 720  # For example, 30 days * 24 hours
     labor_capacity = (row["Labor Headcount"] / row["Cycle Time (hr/unit)"]) * hours_per_month
     return labor_capacity
+
+# ------------------- Process Class -------------------
 
 class Process:
     """
     Each process has: name, cycle_time, labor, bsc, incubator.
-    Now, capacity is additionally constrained by the fact that each process
+    Capacity is additionally constrained by the fact that each process
     can only be run once per day per room.
     """
     def __init__(self, name, cycle_time, labor, bsc, incubator):
@@ -83,25 +119,22 @@ class Process:
         else:
             inc_cap = 1e9
 
-        # New constraint: each process can only run once per day per room.
         room_cap = days_per_period * rooms
 
         return min(labor_cap, bsc_cap, inc_cap, room_cap)
-
-# ... (other helper functions remain unchanged)
 
 # ------------------- Tab 1 (App1) Routes -------------------
 
 @app.route("/upload_excel", methods=["POST"])
 def upload_excel():
     """
-    Expects Excel file with columns:
+    Expects an Excel file with columns:
       - Process
       - Cycle Time (hr/unit)
       - Labor Headcount
       - BSC
       - Incubator
-    Stores the processed data globally for calculations.
+    Stores the processed data globally.
     """
     global uploaded_process_df
 
@@ -119,7 +152,10 @@ def upload_excel():
 
     uploaded_process_df = df  # Store globally for future calculations
 
-    return jsonify({"message": "Excel data uploaded successfully!", "data": df.to_dict(orient="records")})
+    return jsonify({
+        "message": "Excel data uploaded successfully!",
+        "data": df.to_dict(orient="records")
+    })
 
 @app.route("/calculate", methods=["POST"])
 def calculate():
@@ -134,13 +170,12 @@ def calculate():
     timescale = req.get("timescale", "monthly")
     days_per_period = get_days_for_timescale(timescale)
     hours_per_period = shifts_per_day * hours_per_shift * days_per_period
-    
-    print(f"Timescale: {timescale}, Days per period: {days_per_period}, Hours per period: {hours_per_period}")  # Debugging
+
+    print(f"Timescale: {timescale}, Days per period: {days_per_period}, Hours per period: {hours_per_period}")
 
     rooms = float(req.get("rooms", 1))
     max_bsc = float(req.get("max_bsc", 1))
     max_incubators = float(req.get("max_incubators", 1))
-
     scenario = req.get("scenario")
     desired_units = float(req.get("desired_units", 1000))
 
@@ -153,7 +188,6 @@ def calculate():
     if scenario == "max_throughput":
         capacities = []
         for proc in processes:
-            # Pass the new parameters days_per_period and rooms to the method.
             cap = proc.capacity_per_period(
                 hours_per_period, 
                 max_bsc * rooms, 
@@ -246,9 +280,7 @@ def calculate():
             "csv_data": csv_str
         })
 
-    # If scenario doesn't match, we must return something
     return jsonify({"error": "Invalid scenario"}), 400
-
 
 @app.route("/download_csv", methods=["POST"])
 def download_csv():
@@ -299,9 +331,6 @@ def upload_demand():
 
 @app.route("/visuals")
 def visuals():
-    """
-    Renders bullet/gauge charts for capacity vs. demand from Tab 2 data.
-    """
     if capacity_df.empty or demand_df.empty:
         return "<h3>Please upload capacity and demand data first!</h3>"
 
@@ -383,66 +412,45 @@ def visuals():
 # ------------------- Forecast (Tab 3) -------------------
 @app.route("/generate_forecast_table")
 def generate_forecast_table():
-    """
-    Build and return HTML for one or more forecast tables for Tab 3.
-    1) A 'Total Combined' table for the overall capacity from Tab 1 (App1).
-    2) If rooms > 1, additional tables for each CPU (room), each with capacity = total_capacity / rooms.
-    """
     global forecast_demand_df
 
-    # 1) Ensure Tab 1 capacity is set
     if not app1_capacity_result:
         return "<p style='color:red;'>Please run Capacity Planner (Tab 1) first!</p>"
 
-    # 2) Ensure forecast data is uploaded
     if forecast_demand_df.empty:
         return "<p style='color:red;'>No monthly forecast data. Please upload a forecast spreadsheet first.</p>"
 
-    # 3) Extract capacity info from App1
     rooms = app1_capacity_result.get("rooms", 1)
     total_capacity = app1_capacity_result.get("overall_capacity", 0)
 
-    # 4) Convert forecast_demand_df into a dict: {MonthName -> Demand}
     month_demand_map = {}
     for _, row in forecast_demand_df.iterrows():
         month = str(row["Month"]).strip()
         demand = float(row["Demand"])
         month_demand_map[month] = demand
 
-    # 5) Decide the month order
     all_months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
                   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
-    # Helper to build one table (rows = DEMAND, CAPACITY, OVER/UNDER)
     def build_forecast_table(table_title, capacity):
-        # DEMAND row
         demand_cells = []
-        # CAPACITY row
         cap_cells = []
-        # OVER/UNDER row
         over_cells = []
 
         for m in all_months:
             d_val = month_demand_map.get(m, 0)
             surplus = capacity - d_val
-
-            # Color code the surplus cell
             color = "#d4edda" if surplus >= 0 else "#f8d7da"
-
             demand_cells.append(f"<td>{d_val}</td>")
             cap_cells.append(f"<td>{capacity}</td>")
             over_cells.append(f'<td style="background-color:{color};">{surplus}</td>')
 
-        # Table header with months
         th_months = "".join(f"<th>{m}</th>" for m in all_months)
         thead_html = f"<tr><th></th>{th_months}</tr>"
-
-        # Build row strings
         demand_html = f"<tr><td>DEMAND</td>{''.join(demand_cells)}</tr>"
         cap_html    = f"<tr><td>CAPACITY</td>{''.join(cap_cells)}</tr>"
         over_html   = f"<tr><td>OVER/UNDER</td>{''.join(over_cells)}</tr>"
 
-        # Combine into HTML
         table_html = f"""
         <h3>{table_title}</h3>
         <table border="1" cellpadding="4" cellspacing="0" style="border-collapse:collapse; margin-bottom:20px;">
@@ -456,20 +464,16 @@ def generate_forecast_table():
         """
         return table_html
 
-    # 6) Always build the "Total Combined Forecast" table first
     html_parts = []
     html_parts.append(build_forecast_table("Total Combined Forecast", total_capacity))
 
-    # 7) If rooms > 1, build one table per CPU
     if rooms > 1:
         per_cpu_capacity = total_capacity / rooms
         for cpu_index in range(1, int(rooms) + 1):
             title = f"Forecast for CPU #{cpu_index}"
             html_parts.append(build_forecast_table(title, per_cpu_capacity))
 
-    # 8) Return the combined HTML
     return "".join(html_parts)
-
 
 @app.route("/upload_forecast_demand", methods=["POST"])
 def upload_forecast_demand():
@@ -482,7 +486,11 @@ def upload_forecast_demand():
     path = os.path.join("uploads", file.filename)
     file.save(path)
 
-    df = pd.read_excel(path)
+    try:
+        df = pd.read_excel(path)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
     forecast_demand_df = df
     return jsonify({
         "message": "Forecast demand uploaded.",
@@ -495,5 +503,6 @@ def upload_forecast_demand():
 def combined_index():
     return render_template("index.html")
 
-
-#--------- if __name__ == "__main__": app.run(debug=True, port=5000)
+# Uncomment the line below to run the app directly.
+# if __name__ == "__main__":
+#     app.run(debug=True, port=5000)
