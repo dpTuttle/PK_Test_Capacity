@@ -92,7 +92,7 @@ class Process:
 
 # ------------------- Tab 1 (App1) Routes -------------------
 
-@@app.route("/upload_excel", methods=["POST"])
+@app.route("/upload_excel", methods=["POST"])
 def upload_excel():
     """
     Expects an Excel file with columns:
