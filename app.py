@@ -180,7 +180,7 @@ def calculate():
     if scenario == "max_throughput":
         capacities = []
         for proc in processes:
-            cap = proc.capacity_per_period(hours_per_period, max_bsc * rooms, max_incubators * rooms, rooms)
+            cap = proc.capacity_per_period(hours_per_period, max_bsc * rooms, max_incubators * rooms)
             capacities.append({
                 "Process": proc.name,
                 "Capacity": round(cap, 1)
