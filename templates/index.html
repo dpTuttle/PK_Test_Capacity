@@ -134,7 +134,7 @@
 
   <!-- Constraint Note -->
   <div class="constraint-note">
-    Note: Each process can only be run once per day per room.
+    Note: Assumes ach process can only be run once per day per room.
   </div>
 
   <!-- Tab Buttons -->
@@ -154,6 +154,7 @@
 
       <div class="card">
         <h2>Upload Excel (Optional)</h2>
+        <p>Note: this will override any data entered into Process Table manually.</p>
         <input type="file" id="excelFile">
         <button id="uploadExcelBtn">Upload Excel</button>
         <div id="uploadMsg" style="color:green; margin-top:10px;"></div>
@@ -163,7 +164,7 @@
 
       <!-- Card 2: Shift Scheduling & Timescale -->
       <div class="card">
-        <h2>Shift Scheduling & Time Scale</h2>
+        <h2>Capacity Variables (Change as Needed)</h2>
         <br>
         <div style="margin-bottom: 10px;">
           <label>Shifts per Day:</label>
@@ -182,7 +183,7 @@
             <option value="daily">Daily</option>
           </select>
           <br>
-          <label>Equip Throughput (units/machine/hr):</label>
+          <label>Equip Throughput (patients/machine/hr):</label>
           <input type="number" id="equipThroughput" step="0.1" value="1.0">
         </div>
         <br>
@@ -245,17 +246,18 @@
       </div>
 
       <!-- Card 4: Scenario Selection --> 
-      
+
       <div class="card">
         <h2>Choose Scenario</h2>
         <select id="scenarioSelect">
           <option value="max_throughput">Max Throughput</option>
-          <option value="desired_units">Desired Units</option>
+          <option value="desired_units">Desired Patients</option>
         </select>
         <div id="desiredUnitsContainer" class="hidden" style="margin-top:10px;">
-          <label>Desired Units:</label>
+          <label>Desired Patients:</label>
           <input type="number" id="desiredUnits" step="100" value="3000">
         </div>
+        <br>
         <br>
         <button id="runCalcBtn">Run Calculation</button>
         <!-- Processing indicator for calculation -->
@@ -280,11 +282,11 @@
 
   <!-- ====================== TAB 2 (App2) ====================== -->
   <div id="tab2" class="tab-content">
-    <h2>Bullet & Gauge Charts</h2>
+    <h2>Charts Analyzing Capacity Against Demand for Each Process</h2>
     <p>This tab allows users to evaluate individual processes against a process load.</p>
 
     <div class="card">
-      <h3>Upload Capacity Data</h3>
+      <h3>Upload Process Data</h3>
       <input type="file" id="capacityFile"/>
       <button id="uploadCapBtn">Upload Capacity</button>
       <p id="capMsg" style="color:green;"></p>
@@ -317,6 +319,7 @@
 
     <div class="card">
       <button id="generateForecastBtn">Generate Forecast Table</button>
+      <p>Will Generate a Combined Table and Tables for # of CPUS Listed in Tab 1</p>
     </div>
 
     <div class="card">
