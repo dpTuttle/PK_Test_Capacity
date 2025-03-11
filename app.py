@@ -3,9 +3,12 @@ import io
 import math
 import base64
 import csv
+from datetime import datetime
+from calendar import monthrange  # Add this import
 
 from flask import Flask, render_template, request, jsonify, send_file
 import pandas as pd
+
 
 # Matplotlib and Seaborn for Heatmaps
 import matplotlib
@@ -41,7 +44,7 @@ def compute_capacity(row):
     If your capacity_data.xlsx for bullet/gauge still has "Cycle Time" and "Labor Headcount"
     but not BSC/incubators, adapt as needed.
     """
-    hours_per_month = 160
+    hours_per_month = hours_per_period
     equip_throughput = 1.0
     labor_capacity = (row["Labor Headcount"] / row["Cycle Time (hr/unit)"]) * hours_per_month
     return labor_capacity
@@ -68,12 +71,12 @@ class Process:
         labor_cap = (self.labor / self.cycle_time) * hours_per_period
 
         if self.bsc > 0:
-            bsc_cap = max_bsc / self.bsc
+            bsc_cap = (max_bsc / self.bsc) * (hours_per_period / self.cycle_time)
         else:
             bsc_cap = 1e9
 
         if self.incubator > 0:
-            inc_cap = max_incubators / self.incubator
+            inc_cap = (max_incubators / self.incubator) * (hours_per_period / self.cycle_time)
         else:
             inc_cap = 1e9
 
@@ -83,12 +86,14 @@ def get_days_for_timescale(timescale):
     if timescale == "annual":
         return 365
     elif timescale == "monthly":
-        return 30
+        # Get the number of days in the current month
+        now = datetime.now()
+        return monthrange(now.year, now.month)[1]
     elif timescale == "weekly":
         return 7
     elif timescale == "daily":
         return 1
-    return 30
+    return 30  # Default to 30 days if timescale is invalid
 
 def generate_heatmap(df, value_col):
     if df.empty:
@@ -155,6 +160,9 @@ def calculate():
     timescale = req.get("timescale", "monthly")
     days_per_period = get_days_for_timescale(timescale)
     hours_per_period = shifts_per_day * hours_per_shift * days_per_period
+    
+
+    print(f"Timescale: {timescale}, Days per period: {days_per_period}, Hours per period: {hours_per_period}")  # Debugging
 
     rooms = float(req.get("rooms", 1))
     max_bsc = float(req.get("max_bsc", 1))
