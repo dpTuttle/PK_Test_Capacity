@@ -361,13 +361,29 @@
           msg.textContent = data.error;
           msg.style.color = 'red';
         } else {
+          // Clear existing rows
+          const tbody = document.querySelector('#processTable tbody');
+          tbody.innerHTML = '';
+          // Add new rows from Excel data
+          data.processData.forEach(proc => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td><input type="text" value="${proc.name}"></td>
+              <td><input type="number" step="0.1" value="${proc.cycle_time}"></td>
+              <td><input type="number" step="1" value="${proc.labor}"></td>
+              <td><input type="number" step="1" value="${proc.bsc}"></td>
+              <td><input type="number" step="1" value="${proc.incubator}"></td>
+              <td><button class="deleteRow">X</button></td>
+            `;
+            tbody.appendChild(tr);
+          });
           msg.textContent = 'Excel data loaded!';
           msg.style.color = 'green';
         }
       })
       .catch(err => console.log(err));
     });
-
+    
     // Run Calculation for Tab 1
     document.getElementById('runCalcBtn').addEventListener('click', () => {
       // Gather user inputs
