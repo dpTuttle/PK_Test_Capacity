@@ -42,6 +42,10 @@
       color: #fff;
     }
 
+    .hidden {
+      display: none;
+    }
+
     /* ---- Shared Styles for Entire Page ---- */
     body {
       font-family: 'Montserrat', sans-serif;
@@ -154,6 +158,15 @@
         <div id="uploadMsg" style="color:green; margin-top:10px;"></div>
       </div>
 
+      <div class="card">
+        <h2>Upload Excel (Optional)</h2>
+        <input type="file" id="excelFile">
+        <button id="uploadExcelBtn">Upload Excel</button>
+        <div id="uploadMsg" style="color:green; margin-top:10px;"></div>
+        <!-- Processing indicator for Excel upload -->
+        <div id="excelProcessing" class="hidden" style="margin-top:10px; color:blue;">Processing Excel...</div>
+      </div>
+
       <!-- Card 2: Shift Scheduling & Timescale -->
       <div class="card">
         <h2>Shift Scheduling & Time Scale</h2>
@@ -251,6 +264,22 @@
         <br>
         <br>
         <button id="runCalcBtn">Run Calculation</button>
+      </div>
+
+      <div class="card">
+        <h2>Choose Scenario</h2>
+        <select id="scenarioSelect">
+          <option value="max_throughput">Max Throughput</option>
+          <option value="desired_units">Desired Units</option>
+        </select>
+        <div id="desiredUnitsContainer" class="hidden" style="margin-top:10px;">
+          <label>Desired Units:</label>
+          <input type="number" id="desiredUnits" step="100" value="3000">
+        </div>
+        <br>
+        <button id="runCalcBtn">Run Calculation</button>
+        <!-- Processing indicator for calculation -->
+        <div id="calcProcessing" class="hidden" style="margin-top:10px; color:blue;">Processing Calculation...</div>
       </div>
 
       <!-- Results -->
@@ -371,11 +400,16 @@
     document.getElementById('uploadExcelBtn').addEventListener('click', () => {
       const fileInput = document.getElementById('excelFile');
       const msg = document.getElementById('uploadMsg');
+      const processingDiv = document.getElementById('excelProcessing');
       if (!fileInput.files[0]) {
         msg.textContent = "No file selected. Please choose an Excel file.";
         msg.style.color = 'red';
         return;
       }
+
+      // Show processing indicator
+      processingDiv.classList.remove('hidden');
+
       console.log("Uploading Excel file:", fileInput.files[0]);
       
       const formData = new FormData();
@@ -387,6 +421,7 @@
       })
       .then(r => r.json())
       .then(data => {
+        processingDiv.classList.add('hidden');  // Hide processing indicator when done
         if (data.error) {
           msg.textContent = data.error;
           msg.style.color = 'red';
@@ -419,6 +454,10 @@
 
     // Run Calculation for Tab 1
     document.getElementById('runCalcBtn').addEventListener('click', () => {
+      const calcProcessingDiv = document.getElementById('calcProcessing');
+     // Show processing indicator
+     calcProcessingDiv.classList.remove('hidden');
+
       // Gather user inputs
       const shiftsPerDay = parseFloat(document.getElementById('shiftsPerDay').value);
       const hoursPerShift = parseFloat(document.getElementById('hoursPerShift').value);
@@ -472,6 +511,9 @@
       })
       .then(r => r.json())
       .then(data => {
+        // Hide the processing indicator when the request is complete
+        calcProcessingDiv.classList.add('hidden');
+
         const msgDiv = document.getElementById('message');
         const heatmapImg = document.getElementById('heatmapImg');
         const resultsTable = document.getElementById('resultsTable');
@@ -541,7 +583,10 @@
           }
         }
       })
-      .catch(err => console.log(err));
+      .catch(err => {
+        calcProcessingDiv.classList.add('hidden');
+        console.log(err);
+      });
     });
 
     // ----- Tab 2 Logic -----
