@@ -359,8 +359,14 @@
     // Upload Excel for Tab 1
     document.getElementById('uploadExcelBtn').addEventListener('click', () => {
       const fileInput = document.getElementById('excelFile');
-      if (!fileInput.files[0]) return;
-
+      const msg = document.getElementById('uploadMsg');
+      if (!fileInput.files[0]) {
+        msg.textContent = "No file selected. Please choose an Excel file.";
+        msg.style.color = 'red';
+        return;
+      }
+      console.log("Uploading Excel file:", fileInput.files[0]);
+      
       const formData = new FormData();
       formData.append('excelFile', fileInput.files[0]);
 
@@ -370,15 +376,13 @@
       })
       .then(r => r.json())
       .then(data => {
-        const msg = document.getElementById('uploadMsg');
         if (data.error) {
           msg.textContent = data.error;
           msg.style.color = 'red';
         } else {
-          // Clear existing rows
+          // Clear existing rows and add new rows from Excel data
           const tbody = document.querySelector('#processTable tbody');
           tbody.innerHTML = '';
-          // Add new rows from Excel data
           data.processData.forEach(proc => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
@@ -395,7 +399,11 @@
           msg.style.color = 'green';
         }
       })
-      .catch(err => console.log(err));
+      .catch(err => {
+        console.log(err);
+        msg.textContent = "An error occurred during upload.";
+        msg.style.color = 'red';
+      });
     });
 
     // Run Calculation for Tab 1
