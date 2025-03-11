@@ -48,7 +48,7 @@ def compute_capacity(row):
     equip_throughput = 1.0
     labor_capacity = (row["Labor Headcount"] / row["Cycle Time (hr/unit)"]) * hours_per_month
     return labor_capacity
-    
+
 class Process:
     """
     Each process has: name, cycle_time, labor, bsc, incubator.
@@ -90,6 +90,38 @@ class Process:
 
 # ... (other helper functions remain unchanged)
 
+# ------------------- Tab 1 (App1) Routes -------------------
+
+@app.route("/upload_excel", methods=["POST"])
+def upload_excel():
+    """
+    Expects Excel file with columns:
+      - Process
+      - Cycle Time (hr/unit)
+      - Labor Headcount
+      - BSC
+      - Incubator
+    Stores the processed data globally for calculations.
+    """
+    global uploaded_process_df
+
+    file = request.files.get('excelFile')
+    if not file:
+        return jsonify({"error": "No file provided"}), 400
+
+    filepath = os.path.join('uploads', file.filename)
+    file.save(filepath)
+
+    try:
+        df = pd.read_excel(filepath)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+    uploaded_process_df = df  # Store globally for future calculations
+
+    return jsonify({"message": "Excel data uploaded successfully!", "data": df.to_dict(orient="records")})
+
+@app.route("/calculate", methods=["POST"])
 def calculate():
     global app1_capacity_result
 
