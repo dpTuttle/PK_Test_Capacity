@@ -108,6 +108,15 @@
       text-align: center;
       padding: 8px;
     }
+    /* ---- Additional Styling for Constraint Note ---- */
+    .constraint-note {
+      background-color: #e9f5ff;
+      border-left: 4px solid #005fb8;
+      padding: 10px;
+      margin-bottom: 20px;
+      font-size: 0.9rem;
+      color: #005fb8;
+    }
   </style>
 </head>
 
@@ -118,6 +127,11 @@
     <img src="/static/logo-color.png" alt="Company Logo">
     <h1>Capacity & Demand Planning Dashboard</h1>
   </header>
+
+  <!-- Constraint Note -->
+  <div class="constraint-note">
+    Note: Each process can only be run once per day per room.
+  </div>
 
   <!-- Tab Buttons -->
   <div class="tab-buttons">
@@ -161,7 +175,7 @@
           <input type="number" id="equipThroughput" step="0.1" value="1.0">
         </div>
         <div style="margin-bottom: 10px;">
-          <label>Number of Rooms:</label>
+          <label>Number of Rooms (each room processes a process only once per day):</label>
           <input type="number" id="rooms" value="1" step="1" min="1">
         </div>
         <div>
@@ -383,7 +397,7 @@
       })
       .catch(err => console.log(err));
     });
-    
+
     // Run Calculation for Tab 1
     document.getElementById('runCalcBtn').addEventListener('click', () => {
       // Gather user inputs
@@ -428,6 +442,8 @@
         processes: processes,
         desired_units: desiredUnitsVal
       };
+
+      console.log("Payload:", payload);
 
       // POST to /calculate
       fetch('/calculate', {
