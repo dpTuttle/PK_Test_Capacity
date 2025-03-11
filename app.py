@@ -79,7 +79,7 @@ def generate_heatmap(df, value_col, timescale=None):
     ax = sns.heatmap(pivot_df, annot=True, cmap="Greys", fmt=".1f", cbar=False)
     # Overlay the constrained cells with a red palette.
     sns.heatmap(constrained_data, annot=False, cmap="Reds", fmt=".1f", 
-                cbar_kws={"label": "Capacity"}, ax=ax, linewidths=1, linecolor='black')
+                cbar_kws={"label": "Capacity"}, ax=ax, linewidths=3, linecolor='black')
 
     title = f"Bottleneck Heatmap ({timescale})" if timescale else "Bottleneck Heatmap"
     # Optionally, annotate the bottleneck process.
