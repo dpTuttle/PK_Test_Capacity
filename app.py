@@ -83,7 +83,7 @@ def generate_heatmap(df, value_col, timescale=None):
 
     title = f"Bottleneck Heatmap ({timescale})" if timescale else "Bottleneck Heatmap"
     # Optionally, annotate the bottleneck process.
-    for process, value in pivot_df[value_col].iteritems():
+    for process, value in pivot_df[value_col].items():
         if value == bottleneck_value:
             ax.text(0.5, list(pivot_df.index).index(process) + 0.5, "          ← Bottleneck", 
                     color="blue", fontsize=10, va="center", ha="left")
