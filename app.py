@@ -59,15 +59,37 @@ def build_csv(results):
     writer.writerows(results)
     return output.getvalue()
 
-def generate_heatmap(df, value_col):
+def generate_heatmap(df, value_col, timescale=None):
     if df.empty:
         return ""
+    # Create a pivot table with Process as index.
     pivot_df = df.set_index("Process")[[value_col]]
+    # Determine the bottleneck (minimum capacity) value.
+    bottleneck_value = pivot_df[value_col].min()
+    # Define a threshold: processes within 10% of the bottleneck are considered constrained.
+    threshold = bottleneck_value * 1.1
+
+    # Create a boolean mask: True where capacity is NOT constrained.
+    neutral_mask = pivot_df[value_col] > threshold
+    # Create a DataFrame that is NaN except for constrained cells.
+    constrained_data = pivot_df.where(pivot_df[value_col] <= threshold)
+
     plt.figure(figsize=(5, 3))
-    sns.heatmap(pivot_df, annot=True, cmap="Reds", fmt=".1f")
-    plt.title("Process Capacities Heatmap")
+    # Plot the base heatmap using a neutral colormap.
+    ax = sns.heatmap(pivot_df, annot=True, cmap="Greys", fmt=".1f", cbar=False)
+    # Overlay the constrained cells with a red palette.
+    sns.heatmap(constrained_data, annot=False, cmap="Reds", fmt=".1f", 
+                cbar_kws={"label": "Capacity"}, ax=ax, linewidths=1, linecolor='black')
+
+    title = f"Bottleneck Heatmap ({timescale})" if timescale else "Bottleneck Heatmap"
+    # Optionally, annotate the bottleneck process.
+    for process, value in pivot_df[value_col].iteritems():
+        if value == bottleneck_value:
+            ax.text(0.5, list(pivot_df.index).index(process) + 0.5, "          ← Bottleneck", 
+                    color="blue", fontsize=10, va="center", ha="left")
+    plt.title(title)
     buf = io.BytesIO()
-    plt.savefig(buf, format="png")
+    plt.savefig(buf, format="png", bbox_inches="tight")
     buf.seek(0)
     plt.close()
     return base64.b64encode(buf.getvalue()).decode("utf-8")
