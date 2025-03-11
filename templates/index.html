@@ -157,13 +157,15 @@
       <!-- Card 2: Shift Scheduling & Timescale -->
       <div class="card">
         <h2>Shift Scheduling & Time Scale</h2>
+        <br>
         <div style="margin-bottom: 10px;">
           <label>Shifts per Day:</label>
           <input type="number" id="shiftsPerDay" value="1" step="1" min="1">
-
+          <br>
           <label>Hours per Shift:</label>
           <input type="number" id="hoursPerShift" value="8" step="1" min="1">
         </div>
+        <br>
         <div style="margin-bottom: 10px;">
           <label>Time Scale:</label>
           <select id="timescaleSelect">
@@ -172,17 +174,20 @@
             <option value="weekly">Weekly</option>
             <option value="daily">Daily</option>
           </select>
-
+          <br>
           <label>Equip Throughput (units/machine/hr):</label>
           <input type="number" id="equipThroughput" step="0.1" value="1.0">
         </div>
+        <br>
         <div style="margin-bottom: 10px;">
           <label>Number of Rooms (each room processes a process only once per day):</label>
           <input type="number" id="rooms" value="1" step="1" min="1">
         </div>
+        <br>
         <div>
           <label>Max BSC:</label>
           <input type="number" id="maxBSC" value="1" min="1">
+          <br>
           <label>Max Incubators:</label>
           <input type="number" id="maxIncubators" value="1" min="1">
         </div>
