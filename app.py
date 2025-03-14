@@ -69,8 +69,6 @@ def generate_heatmap(df, value_col, timescale=None):
     # Define a threshold: processes within 10% of the bottleneck are considered constrained.
     threshold = bottleneck_value * 1.1
 
-    # Create a boolean mask: True where capacity is NOT constrained.
-    neutral_mask = pivot_df[value_col] > threshold
     # Create a DataFrame that is NaN except for constrained cells.
     constrained_data = pivot_df.where(pivot_df[value_col] <= threshold)
 
@@ -78,14 +76,13 @@ def generate_heatmap(df, value_col, timescale=None):
     # Plot the base heatmap using a neutral colormap.
     ax = sns.heatmap(pivot_df, annot=True, cmap="Greys", fmt=".1f", cbar=False)
     # Overlay the constrained cells with a red palette.
-    sns.heatmap(constrained_data, annot=False, cmap="Reds", fmt=".1f", 
+    sns.heatmap(constrained_data, annot=False, cmap="Reds", fmt=".1f",
                 cbar_kws={"label": "Capacity"}, ax=ax, linewidths=3, linecolor='black')
 
     title = f"Bottleneck Heatmap ({timescale})" if timescale else "Bottleneck Heatmap"
-    # Optionally, annotate the bottleneck process.
     for process, value in pivot_df[value_col].items():
         if value == bottleneck_value:
-            ax.text(0.5, list(pivot_df.index).index(process) + 0.5, "          ← Bottleneck", 
+            ax.text(0.5, list(pivot_df.index).index(process) + 0.5, "          ← Bottleneck",
                     color="blue", fontsize=10, va="center", ha="left")
     plt.title(title)
     buf = io.BytesIO()
@@ -137,16 +134,6 @@ class Process:
 
 @app.route("/upload_excel", methods=["POST"])
 def upload_excel():
-    """
-    Expects an Excel file with columns:
-      - Process
-      - Cycle Time (hr/unit)
-      - Labor Headcount
-      - BSC
-      - Incubator
-    Returns JSON with a key 'processData' that maps to a list of records
-    with keys: name, cycle_time, labor, bsc, incubator.
-    """
     global uploaded_process_df
 
     file = request.files.get('excelFile')
@@ -161,7 +148,6 @@ def upload_excel():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-    # Map Excel columns to expected keys for the front end.
     process_data = []
     for _, row in df.iterrows():
         process_data.append({
@@ -169,10 +155,11 @@ def upload_excel():
             "cycle_time": row["Cycle Time (hr/unit)"],
             "labor": row["Labor Headcount"],
             "bsc": row["BSC"],
-            "incubator": row["Incubator"]
+            "incubator": row["Incubator"],
+            "department": row.get("Department", "MFG")
         })
 
-    uploaded_process_df = df  # Store globally if needed
+    uploaded_process_df = df
 
     return jsonify({
         "message": "Excel data uploaded successfully!",
@@ -201,12 +188,18 @@ def calculate():
     scenario = req.get("scenario")
     desired_units = float(req.get("desired_units", 1000))
 
+    # Department headcount inputs
+    mfg_headcount = float(req.get("mfg_headcount", 0))
+    qc_headcount = float(req.get("qc_headcount", 0))
+    qa_headcount = float(req.get("qa_headcount", 0))
+
     process_list = req.get("processes", [])
     processes = []
     for p in process_list:
         try:
-            obj = Process(p["name"], p["cycle_time"], p["labor"], p["bsc"], p["incubator"])
-            processes.append(obj)
+            proc = Process(p["name"], p["cycle_time"], p["labor"], p["bsc"], p["incubator"])
+            proc.department = p.get("department", "MFG")
+            processes.append(proc)
         except Exception as e:
             return jsonify({"error": f"Error processing process data: {e}"}), 400
 
@@ -214,35 +207,79 @@ def calculate():
         capacities = []
         for proc in processes:
             cap = proc.capacity_per_period(
-                hours_per_period, 
-                max_bsc * rooms, 
+                hours_per_period,
+                max_bsc * rooms,
                 max_incubators * rooms,
                 days_per_period,
                 rooms
             )
             capacities.append({
                 "Process": proc.name,
-                "Capacity": round(cap, 1)
+                "Capacity": round(cap, 1),
+                "Department": proc.department
             })
 
         if not capacities:
             return jsonify({"message": "No processes defined"}), 200
 
-        min_cap = min(c["Capacity"] for c in capacities)
-        bottleneck = [c for c in capacities if c["Capacity"] == min_cap][0]["Process"]
+        # Hard Capacity is based on equipment/room constraints (the bottleneck value)
+        hard_capacity = min(c["Capacity"] for c in capacities)
+        bottleneck = [c for c in capacities if c["Capacity"] == hard_capacity][0]["Process"]
 
         df_cap = pd.DataFrame(capacities)
-        heatmap_img = generate_heatmap(df_cap, "Capacity")
+        heatmap_img = generate_heatmap(df_cap, "Capacity", timescale)
 
-        msg = (f"Max {timescale} throughput is {min_cap:.1f} units, with {rooms} room(s), "
+        # --- Departmental Labor Calculation ---
+        departments = {}
+        for proc in processes:
+            dept = proc.department.upper()
+            if dept not in departments:
+                departments[dept] = []
+            departments[dept].append(proc)
+        
+        scaling_factors = []
+        labor_details = {}
+        for dept, proc_list in departments.items():
+            required_hours = sum(hard_capacity * proc.cycle_time for proc in proc_list)
+            if dept == "MFG":
+                available_hours = mfg_headcount * hours_per_shift * days_per_period
+            elif dept == "QC":
+                available_hours = qc_headcount * hours_per_shift * days_per_period
+            elif dept == "QA":
+                available_hours = qa_headcount * hours_per_shift * days_per_period
+            else:
+                available_hours = 0
+
+            if required_hours > 0:
+                factor = available_hours / required_hours
+            else:
+                factor = 1
+
+            # Default to 1 if the factor is 0 or falsy.
+            if not factor or factor == 0:
+                factor = 1
+
+            scaling_factors.append(factor)
+            labor_details[dept] = {
+                "required_hours": round(required_hours, 2),
+                "available_hours": round(available_hours, 2),
+                "scaling_factor": round(factor, 2)
+            }
+        
+        overall_scaling_factor = min(scaling_factors) if scaling_factors else 1
+        theoretical_capacity = hard_capacity * overall_scaling_factor
+        
+        msg = (f"Max {timescale} throughput is {hard_capacity:.1f} units, with {rooms} suite(s), "
                f"{max_bsc} BSC(s), {max_incubators} Incubator(s). Bottleneck: {bottleneck}.")
+        msg += (f" Based on headcount (MFG: {mfg_headcount}, QC: {qc_headcount}, QA: {qa_headcount}), "
+                f"the theoretical maximum throughput is {theoretical_capacity:.1f} units.")
 
         app1_capacity_result = {
             "rooms": rooms,
             "max_bsc": max_bsc,
             "max_incubators": max_incubators,
             "timescale": timescale,
-            "overall_capacity": min_cap,
+            "overall_capacity": hard_capacity,
             "details": capacities
         }
 
@@ -250,15 +287,18 @@ def calculate():
             "scenario": scenario,
             "capacities": capacities,
             "message": msg,
-            "heatmap": heatmap_img
+            "heatmap": heatmap_img,
+            "hard_capacity": hard_capacity,
+            "adjusted_throughput": theoretical_capacity,
+            "labor_by_department": labor_details
         })
 
     elif scenario == "desired_units":
         results = []
         for proc in processes:
             cap = proc.capacity_per_period(
-                hours_per_period, 
-                max_bsc * rooms, 
+                hours_per_period,
+                max_bsc * rooms,
                 max_incubators * rooms,
                 days_per_period,
                 rooms
@@ -277,6 +317,7 @@ def calculate():
 
             results.append({
                 "Process": proc.name,
+                "Department": proc.department,
                 "Rooms": rooms,
                 "Max_BSC": max_bsc,
                 "Max_Incubators": max_incubators,
@@ -290,6 +331,8 @@ def calculate():
             })
 
         csv_str = build_csv(results)
+        total_needed_labor = sum(item["Needed Labor"] for item in results)
+
         app1_capacity_result = {
             "rooms": rooms,
             "max_bsc": max_bsc,
@@ -302,7 +345,8 @@ def calculate():
         return jsonify({
             "scenario": scenario,
             "results": results,
-            "csv_data": csv_str
+            "csv_data": csv_str,
+            "total_needed_labor": total_needed_labor
         })
 
     return jsonify({"error": "Invalid scenario"}), 400
@@ -310,10 +354,8 @@ def calculate():
 @app.route("/download_csv", methods=["POST"])
 def download_csv():
     csv_data = request.form.get("csv_data", "")
-    buf = io.BytesIO(csv_data.encode('utf-8'))
+    buf = io.BytesIO(csv_data.encode("utf-8"))
     return send_file(buf, as_attachment=True, download_name="ideal_setup.csv", mimetype="text/csv")
-
-# ------------------- Tab 2 (App2) Routes (Bullet/Gauge) -------------------
 
 @app.route("/upload_capacity", methods=["POST"])
 def upload_capacity():
@@ -335,115 +377,79 @@ def upload_capacity():
         "data": df.to_dict(orient="records")
     })
 
-@app.route("/upload_demand", methods=["POST"])
-def upload_demand():
-    global demand_df
-
-    file = request.files.get("demandFile")
-    if not file:
-        return jsonify({"error": "No demand file provided"}), 400
-
-    filepath = os.path.join("uploads", file.filename)
-    file.save(filepath)
-
-    df = pd.read_excel(filepath)
-    demand_df = df
-
-    return jsonify({
-        "message": "Demand data uploaded.",
-        "data": df.to_dict(orient="records")
-    })
-
-@app.route("/visuals")
+@app.route("/visuals", methods=["POST"])
 def visuals():
-    if capacity_df.empty or demand_df.empty:
-        return "<h3>Please upload capacity and demand data first!</h3>"
+    # Ensure Tab 1 capacity data is available.
+    if not app1_capacity_result:
+        return jsonify({"error": "Please run Capacity Planner (Tab 1) first!"}), 400
+    
+    req_data = request.json or {}
+    desired_patients = float(req_data.get("desired_patients", 0))
+    
+    # Retrieve the per-process capacity details from Tab 1.
+    details = app1_capacity_result.get("details", [])
+    if not details:
+        return jsonify({"error": "No process capacity data available."}), 400
 
-    merged = pd.merge(capacity_df, demand_df, on="Process", how="inner")
-    html_parts = ["<h2>Capacity vs Demand Dashboard</h2>"]
+    n_processes = len(details)
+    # Distribute the overall desired throughput equally among processes.
+    process_demand = desired_patients / n_processes if n_processes > 0 else 0
 
-    for _, row in merged.iterrows():
-        process_name = row["Process"]
-        capacity_val = row["Capacity"]
-        demand_val = row["Demand (Units/Month)"]
+    charts = []
+    for proc in details:
+        proc_name = proc.get("Process", "Unknown")
+        proc_capacity = proc.get("Capacity", 0)
+        max_range = max(proc_capacity, process_demand) * 1.2
 
-        fig = make_subplots(
-            rows=1, cols=2,
-            column_widths=[0.5, 0.5],
-            horizontal_spacing=0.15,
-            specs=[[{"type": "indicator"}, {"type": "indicator"}]],
-            subplot_titles=[f"{process_name} - Bullet", f"{process_name} - Gauge"]
-        )
-
-        max_axis = max(capacity_val, demand_val) * 1.2
-        bullet = go.Indicator(
-            mode="number+gauge",
-            value=demand_val,
-            gauge={
-                "shape": "bullet",
-                "axis": {"range": [None, max_axis]},
-                "threshold": {
-                    "line": {"color": "red", "width": 3},
-                    "thickness": 0.8,
-                    "value": capacity_val
-                },
-                "bar": {"color": "#1f77b4"},
-            },
-            title={"text": "Demand vs Capacity"},
-            domain={'row': 0, 'column': 0}
-        )
-
-        utilization_pct = (demand_val / capacity_val * 100) if capacity_val > 0 else 0
-        gauge = go.Indicator(
+        fig = go.Figure(go.Indicator(
             mode="gauge+number+delta",
-            value=utilization_pct,
-            delta={'reference': 100},
+            value=proc_capacity,
+            delta={
+                'reference': process_demand, 
+                'increasing': {'color': "green"},
+                'decreasing': {'color': "red"}
+            },
+            title={"text": proc_name},
             gauge={
-                'axis': {'range': [None, 200]},
+                'axis': {'range': [None, max_range]},
                 'bar': {'color': "#1f77b4"},
                 'steps': [
-                    {'range': [0, 80],   'color': '#c7e9c0'},
-                    {'range': [80, 100], 'color': '#ffffbf'},
-                    {'range': [100, 150],'color': '#fdaf61'},
-                    {'range': [150, 200],'color': '#f03b20'}
+                    {'range': [0, max_range * 0.5], 'color': '#c7e9c0'},
+                    {'range': [max_range * 0.5, max_range], 'color': '#ffffbf'}
                 ],
-                'threshold': {
-                    'line': {'color': "red", 'width': 4},
-                    'thickness': 0.75,
-                    'value': 100
-                }
-            },
-            title={"text": "Utilization (%)"},
-            domain={'row': 0, 'column': 1}
-        )
-
-        fig.add_trace(bullet, row=1, col=1)
-        fig.add_trace(gauge,  row=1, col=2)
-
+            }
+        ))
+        # Add an annotation showing capacity vs. demand.
         fig.update_layout(
-            template="plotly_white",
-            height=350,
-            margin=dict(l=40, r=40, t=70, b=40),
-            title=dict(text=f"{process_name}", x=0.5, xanchor='center'),
-            font=dict(family="Arial", size=12),
+            margin={"t": 50, "b": 0, "l": 0, "r": 0},
+            annotations=[
+                {
+                    "text": f"Capacity: {proc_capacity}, Demand Share: {process_demand:.1f}",
+                    "x": 0.5,
+                    "y": 0,
+                    "xref": "paper",
+                    "yref": "paper",
+                    "showarrow": False,
+                    "font": {"size": 12, "color": "black"}
+                }
+            ]
         )
-        chart_html = fig.to_html(full_html=False)
-        html_parts.append(
-            f"<div style='margin-bottom:30px; border:1px solid #ddd; padding:10px;'>{chart_html}</div>"
-        )
+        charts.append(fig.to_plotly_json())
+    import json
+    return app.response_class(json.dumps(charts), mimetype='application/json')
 
-    return "".join(html_parts)
-
-# ------------------- Forecast (Tab 3) -------------------
-@app.route("/generate_forecast_table")
+@app.route("/generate_forecast_table", methods=["POST"])
 def generate_forecast_table():
     global forecast_demand_df
 
     if not app1_capacity_result:
         return "<p style='color:red;'>Please run Capacity Planner (Tab 1) first!</p>"
-
+    
     if forecast_demand_df.empty:
         return "<p style='color:red;'>No monthly forecast data. Please upload a forecast spreadsheet first.</p>"
+
+    req_data = request.json or {}
+    constraints = req_data.get("constraints", {})
 
     rooms = app1_capacity_result.get("rooms", 1)
     total_capacity = app1_capacity_result.get("overall_capacity", 0)
@@ -461,28 +467,21 @@ def generate_forecast_table():
         demand_cells = []
         cap_cells = []
         over_cells = []
-
         for m in all_months:
             d_val = month_demand_map.get(m, 0)
-            surplus = capacity - d_val
-
-            # Round all values to the nearest whole number
-            d_val_rounded = round(d_val)
-            cap_rounded = round(capacity)
-            surplus_rounded = round(surplus)
-
+            capacity_reduced = capacity - constraints.get(m, 0)
+            if capacity_reduced < 0:
+                capacity_reduced = 0
+            surplus = capacity_reduced - d_val
             color = "#d4edda" if surplus >= 0 else "#f8d7da"
-
-            demand_cells.append(f"<td>{d_val_rounded}</td>")
-            cap_cells.append(f"<td>{cap_rounded}</td>")
-            over_cells.append(f'<td style="background-color:{color};">{surplus_rounded}</td>')
-
+            demand_cells.append(f"<td>{int(round(d_val))}</td>")
+            cap_cells.append(f"<td>{int(round(capacity_reduced))}</td>")
+            over_cells.append(f'<td style="background-color:{color};">{int(round(surplus))}</td>')
         th_months = "".join(f"<th>{m}</th>" for m in all_months)
         thead_html = f"<tr><th></th>{th_months}</tr>"
         demand_html = f"<tr><td>DEMAND</td>{''.join(demand_cells)}</tr>"
-        cap_html    = f"<tr><td>CAPACITY</td>{''.join(cap_cells)}</tr>"
-        over_html   = f"<tr><td>OVER/UNDER</td>{''.join(over_cells)}</tr>"
-
+        cap_html = f"<tr><td>CAPACITY</td>{''.join(cap_cells)}</tr>"
+        over_html = f"<tr><td>OVER/UNDER</td>{''.join(over_cells)}</tr>"
         table_html = f"""
         <h3>{table_title}</h3>
         <table border="1" cellpadding="4" cellspacing="0" style="border-collapse:collapse; margin-bottom:20px;">
@@ -498,13 +497,11 @@ def generate_forecast_table():
 
     html_parts = []
     html_parts.append(build_forecast_table("Total Combined Forecast", total_capacity))
-
     if rooms > 1:
         per_cpu_capacity = total_capacity / rooms
         for cpu_index in range(1, int(rooms) + 1):
-            title = f"Forecast for CPU #{cpu_index}"
+            title = f"Forecast for Suite #{cpu_index}"
             html_parts.append(build_forecast_table(title, per_cpu_capacity))
-
     return "".join(html_parts)
 
 @app.route("/upload_forecast_demand", methods=["POST"])
@@ -529,12 +526,47 @@ def upload_forecast_demand():
         "data": df.to_dict(orient="records")
     })
 
-# ------------------- Combined Index (Tabs, etc.) -------------------
+@app.route("/download_template/<template_type>", methods=["GET"])
+def download_template(template_type):
+    import pandas as pd
+    import io
+    from flask import send_file
+
+    if template_type == "process":
+        df = pd.DataFrame(columns=[
+            "Process", 
+            "Cycle Time (hr/unit)", 
+            "Labor Headcount", 
+            "BSC", 
+            "Incubator", 
+            "Department"
+        ])
+        filename = "process_template.xlsx"
+    elif template_type == "forecast":
+        df = pd.DataFrame({
+            "Month": ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+            "Demand": ["" for _ in range(12)]
+        })
+        filename = "forecast_template.xlsx"
+    else:
+        return "Invalid template type", 400
+
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
+        df.to_excel(writer, index=False)
+    output.seek(0)
+    return send_file(
+        output,
+        attachment_filename=filename,
+        as_attachment=True,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 
 @app.route("/")
 def combined_index():
     return render_template("index.html")
 
-# Uncomment the line below to run the app directly.
+# Uncomment the following line to run the app directly.
 # if __name__ == "__main__":
 #     app.run(debug=True, port=5000)
