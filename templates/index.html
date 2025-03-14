@@ -149,7 +149,7 @@
         <div class="card">
           <h2>Upload Excel (Optional)</h2>
           <p>
-            Note: this will override any data entered into the Process Table manually.
+            Note: this will override any data entered into Process Table manually.
             <br>Click "Upload Excel" after you select your file.
           </p>
           <input type="file" id="excelFile">
@@ -186,7 +186,7 @@
               <option value="daily">Daily</option>
               <option value="custom">Custom</option>
             </select>
-            <!-- Custom timescale input (number of days) is hidden by default -->
+            <!-- Custom timescale input is hidden by default -->
             <input type="number" id="customTimescale" class="hidden" placeholder="Enter days" style="width:100px;">
             <br>
             <label>Equip Throughput (patients/machine/hr):</label>
@@ -219,7 +219,7 @@
           </div>
         </div>
 
-        <!-- Card 3: Process Table -->
+        <!-- Card 3: Process Table (Manual Entry) -->
         <div class="card">
           <h2>Process Table (Manual Entry)</h2>
           <table id="processTable">
@@ -230,6 +230,7 @@
                 <th>Labor Headcount</th>
                 <th>BSC</th>
                 <th>Incubator</th>
+                <th>Process Days</th>
                 <th>Department</th>
                 <th></th>
               </tr>
@@ -241,6 +242,7 @@
                 <td><input type="number" step="1" value="10"></td>
                 <td><input type="number" step="1" value="5"></td>
                 <td><input type="number" step="1" value="2"></td>
+                <td><input type="number" step="0.1" value="0"></td>
                 <td>
                   <select>
                     <option value="MFG" selected>MFG</option>
@@ -256,6 +258,7 @@
                 <td><input type="number" step="1" value="4"></td>
                 <td><input type="number" step="1" value="3"></td>
                 <td><input type="number" step="1" value="1"></td>
+                <td><input type="number" step="0.1" value="0"></td>
                 <td>
                   <select>
                     <option value="MFG" selected>MFG</option>
@@ -271,6 +274,7 @@
                 <td><input type="number" step="1" value="6"></td>
                 <td><input type="number" step="1" value="2"></td>
                 <td><input type="number" step="1" value="2"></td>
+                <td><input type="number" step="0.1" value="0"></td>
                 <td>
                   <select>
                     <option value="MFG" selected>MFG</option>
@@ -294,7 +298,7 @@
           </select>
           <div id="desiredUnitsContainer" class="hidden" style="margin-top:10px;">
             <label>Desired Patients:</label>
-            <input type="number" id="desiredUnits" step="100" value="1">
+            <input type="number" id="desiredUnits" step="100" value="3000">
           </div>
           <br><br>
           <button id="runCalcBtn">Run Calculation</button>
@@ -326,7 +330,7 @@
     <div id="tab2" class="tab-content">
       <h2>Charts Analyzing Capacity Against Desired Throughput</h2>
       <p>
-        This tab allows users to compare the hard capacity data generated from Tab 1 against a desired patient throughput.
+        This tab allows users to compare the hard capacity data from Tab 1 against a desired patient throughput.
       </p>
       <div class="card">
         <h3>Desired Patient Throughput</h3>
@@ -336,10 +340,10 @@
       <div class="card">
         <h3>View Process Utilization</h3>
         <p>
-          This gauge shows how each process’s capacity compares to its share of the desired throughput.
-          <br>Click this button again if you change data in the Capacity Planner tab.
+          This gauge shows how each process’s capacity compares to its share of the desired patient throughput.
         </p>
         <button id="visualsBtn">View Charts</button>
+        <p>Click again if you change data in the Capacity Planner tab.</p>
         <div id="visualsResult"></div>
       </div>
     </div>
@@ -353,7 +357,7 @@
       </p>
       <div class="card">
         <h3>Upload Monthly Demand (Month, Demand):</h3>
-        <p>Click "Upload Forecast" after you select your file</p>
+        <p>Click "Upload Forecast" after you have selected your file.</p>
         <input type="file" id="forecastFile" />
         <button id="uploadForecastBtn">Upload Forecast</button>
         <!-- New Download Template Button -->
@@ -364,9 +368,9 @@
       </div>
       <div class="card">
         <button id="generateForecastBtn">Generate Forecast Table</button>
+        <button id="downloadForecastExcelBtn">Export Forecast to Excel</button>
         <p>
           Will generate a combined table and tables for the number of Suites listed in the Capacity Planner tab.
-          <br>Click this button each time you change data in the Capacity Planner tab.
         </p>
       </div>
       <!-- NEW CARD: Additional Constraints -->
@@ -397,7 +401,6 @@
         <div id="forecastResult"></div>
       </div>
     </div>
-    <!-- end tab3 -->
 
     <script>
       // Set up timescale listener
@@ -421,7 +424,7 @@
         return 30;
       }
 
-      // ----- Tab Logic -----
+      // Tab switching
       function showTab(event, tabId) {
         const allButtons = document.querySelectorAll('.tab-buttons button');
         allButtons.forEach(btn => btn.classList.remove('active'));
@@ -431,7 +434,7 @@
         document.getElementById(tabId).classList.add('active-tab');
       }
 
-      // ----- Scenario (Tab 1) Logic -----
+      // Scenario toggle (Tab 1)
       const scenarioSelect = document.getElementById('scenarioSelect');
       const desiredUnitsContainer = document.getElementById('desiredUnitsContainer');
       scenarioSelect.addEventListener('change', () => {
@@ -452,6 +455,7 @@
           <td><input type="number" step="1" value="5"></td>
           <td><input type="number" step="1" value="3"></td>
           <td><input type="number" step="1" value="2"></td>
+          <td><input type="number" step="0.1" value="0"></td>
           <td>
             <select>
               <option value="MFG" selected>MFG</option>
@@ -506,6 +510,7 @@
                   <td><input type="number" step="1" value="${proc.labor}"></td>
                   <td><input type="number" step="1" value="${proc.bsc}"></td>
                   <td><input type="number" step="1" value="${proc.incubator}"></td>
+                  <td><input type="number" step="0.1" value="${proc.process_days || 0}"></td>
                   <td>
                     <select>
                       <option value="MFG" ${proc.department && proc.department.toUpperCase() === "MFG" ? 'selected' : ''}>MFG</option>
@@ -532,7 +537,6 @@
       document.getElementById('runCalcBtn').addEventListener('click', () => {
         const calcProcessingDiv = document.getElementById('calcProcessing');
         calcProcessingDiv.classList.remove('hidden');
-
         const shiftsPerDay = parseFloat(document.getElementById('shiftsPerDay').value);
         const hoursPerShift = parseFloat(document.getElementById('hoursPerShift').value);
         const timescale = timescaleSelect.value;
@@ -547,17 +551,14 @@
         const roomsVal = parseFloat(document.getElementById('rooms').value) || 1;
         const maxBscVal = parseFloat(document.getElementById('maxBSC').value) || 1;
         const maxIncVal = parseFloat(document.getElementById('maxIncubators').value) || 1;
-
         // Headcount fields
         const mfgHeadcount = parseFloat(document.getElementById('mfgHeadcount').value) || 0;
         const qcHeadcount = parseFloat(document.getElementById('qcHeadcount').value) || 0;
         const qaHeadcount = parseFloat(document.getElementById('qaHeadcount').value) || 0;
-
         let desiredUnitsVal = 0;
         if (scenario === 'desired_units') {
           desiredUnitsVal = parseFloat(document.getElementById('desiredUnits').value);
         }
-
         const rows = document.querySelectorAll('#processTable tbody tr');
         const processes = [];
         rows.forEach(row => {
@@ -569,10 +570,10 @@
             labor: inputs[2].value,
             bsc: inputs[3].value,
             incubator: inputs[4].value,
+            process_days: inputs[5].value,
             department: selectElem ? selectElem.value : "MFG"
           });
         });
-
         const payload = {
           scenario: scenario,
           shifts_per_day: shiftsPerDay,
@@ -588,9 +589,7 @@
           qc_headcount: qcHeadcount,
           qa_headcount: qaHeadcount
         };
-
         console.log("Payload:", payload);
-
         fetch('/calculate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -614,11 +613,9 @@
             }
             msgDiv.style.color = '#333';
             if (scenario === 'max_throughput') {
-              let throughput = data.adjusted_throughput;
-              if (typeof throughput === 'number') {
-                throughput = throughput.toFixed(1);
-              } else {
-                throughput = "N/A";
+              let throughput = "N/A";
+              if (data.adjusted_throughput !== undefined && typeof data.adjusted_throughput === 'number') {
+                throughput = data.adjusted_throughput.toFixed(1);
               }
               let fullMsg = "Hard Capacity (Equipment & Room Constraints): " +
                 data.hard_capacity.toFixed(1) + " patients. Theoretical Capacity (based on headcount): " +
@@ -762,6 +759,25 @@
 
       document.getElementById("generateForecastBtn").addEventListener("click", regenerateForecastTable);
 
+      document.getElementById("downloadForecastExcelBtn").addEventListener("click", () => {
+        fetch("/download_forecast_excel", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ constraints: window.capacityConstraints || {} })
+        })
+          .then(resp => resp.blob())
+          .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "forecast_results.xlsx";
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+          })
+          .catch(err => console.log("Error downloading forecast Excel:", err));
+      });
+
       document.getElementById("visualsBtn").addEventListener("click", () => {
         const desiredPatients = parseFloat(document.getElementById("desiredPatients").value) || 0;
         fetch('/visuals', {
@@ -772,7 +788,7 @@
           .then(res => res.json())
           .then(charts => {
             const container = document.getElementById("visualsResult");
-            container.innerHTML = ""; // Clear previous charts
+            container.innerHTML = "";
             charts.forEach((chartDef, index) => {
               const chartDiv = document.createElement("div");
               chartDiv.id = "chart_" + index;
