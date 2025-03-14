@@ -1,684 +1,789 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <title>ProKidney Capacity</title>
+  <head>
+    <title>ProKidney Capacity</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;700&display=swap"
+      rel="stylesheet"
+    >
+    <script src="https://cdn.plot.ly/plotly-2.12.1.min.js"></script>
+    <style>
+      /* ---- Basic Tab Styling ---- */
+      .tab-buttons {
+        margin-bottom: 10px;
+      }
+      .tab-buttons button {
+        display: inline-block;
+        background-color: #f2f2f2;
+        color: #333;
+        padding: 8px 16px;
+        margin-right: 2px;
+        border: 1px solid #ccc;
+        border-bottom: none;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+        cursor: pointer;
+        font-weight: 500;
+        box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.1);
+        transition: background 0.2s;
+      }
+      .tab-content {
+        display: none;
+      }
+      .active-tab {
+        display: block;
+      }
+      .tab-buttons button.active {
+        background-color: rgb(87, 112, 235);
+        color: #fff;
+      }
+      .hidden {
+        display: none;
+      }
+      /* ---- Shared Styles for Entire Page ---- */
+      body {
+        font-family: 'Montserrat', sans-serif;
+        margin: 0;
+        padding: 20px;
+        background-color: #f6f7f9;
+        color: #333;
+      }
+      h1 {
+        margin-top: 0;
+      }
+      h2 {
+        margin-bottom: 0.5rem;
+      }
+      .card {
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        padding: 20px;
+      }
+      button {
+        background-color: #005fb8;
+        color: #fff;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: background 0.3s;
+      }
+      header img {
+        height: 60px;
+        margin-right: 20px;
+      }
+      header h1 {
+        font-weight: 700;
+        margin: 0;
+        margin-bottom: 20px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+      }
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 8px;
+      }
+      table.my-forecast-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+      }
+      table.my-forecast-table th {
+        background-color: #0b3954;
+        color: #fff;
+        padding: 8px;
+      }
+      table.my-forecast-table td {
+        text-align: center;
+        padding: 8px;
+      }
+      /* ---- Additional Styling for Constraint Note ---- */
+      .constraint-note {
+        background-color: #e9f5ff;
+        border-left: 4px solid #005fb8;
+        padding: 10px;
+        margin-bottom: 20px;
+        font-size: 0.9rem;
+        color: #005fb8;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <!-- Make sure your logo is in 'static/logo-color.png' -->
+      <img src="/static/logo-color.png" alt="Company Logo">
+      <h1>Capacity Planning Tool</h1>
+    </header>
 
-  <!-- Google Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link 
-    href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;700&display=swap" 
-    rel="stylesheet"
-  >
+    <!-- Constraint Note -->
+    <div class="constraint-note">
+      Note: Assumes each process can only be run once per day per room.
+    </div>
 
-  <style>
-    /* ---- Basic Tab Styling ---- */
-    .tab-buttons {
-      margin-bottom: 10px;
-    }
-    .tab-buttons button {
-      display: inline-block;
-      background-color: #f2f2f2; 
-      color: #333;
-      padding: 8px 16px;
-      margin-right: 2px;
-      border: 1px solid #ccc;
-      border-bottom: none;
-      border-top-left-radius: 8px;
-      border-top-right-radius: 8px;
-      cursor: pointer;
-      font-weight: 500;
-      box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.1);
-      transition: background 0.2s;
-    }
-    .tab-content {
-      display: none; 
-    }
-    .active-tab {
-      display: block; 
-    }
-    .tab-buttons button.active {
-      background-color: rgb(87, 112, 235);
-      color: #fff;
-    }
+    <!-- Tab Buttons -->
+    <div class="tab-buttons">
+      <button class="active" onclick="showTab(event, 'tab1')">Capacity Planner</button>
+      <button onclick="showTab(event, 'tab3')">Capacity & Forecast</button>
+      <button onclick="showTab(event, 'tab2')">Process Utilization</button>
+    </div>
 
-    .hidden {
-      display: none;
-    }
-
-    /* ---- Shared Styles for Entire Page ---- */
-    body {
-      font-family: 'Montserrat', sans-serif;
-      margin: 0;
-      padding: 20px;
-      background-color: #f6f7f9;
-      color: #333;
-    }
-    h1 {
-      margin-top: 0;
-    }
-    h2 {
-      margin-bottom: 0.5rem;
-    }
-    .card {
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-      margin-bottom: 20px;
-      padding: 20px;
-    }
-    button {
-      background-color: #005fb8;
-      color: #fff;
-      padding: 8px 16px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-weight: 600;
-      transition: background 0.3s;
-    }
-    header img {
-      height: 60px;
-      margin-right: 20px;
-    }
-    header h1 {
-      font-weight: 700;
-      margin: 0;
-      margin-bottom: 20px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-    }
-    th, td {
-      border: 1px solid #ddd;
-      padding: 8px;
-    }
-    .hidden {
-      display: none;
-    }
-    table.my-forecast-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-    }
-    table.my-forecast-table th {
-      background-color: #0b3954;
-      color: #fff;
-      padding: 8px;
-    }
-    table.my-forecast-table td {
-      text-align: center;
-      padding: 8px;
-    }
-    /* ---- Additional Styling for Constraint Note ---- */
-    .constraint-note {
-      background-color: #e9f5ff;
-      border-left: 4px solid #005fb8;
-      padding: 10px;
-      margin-bottom: 20px;
-      font-size: 0.9rem;
-      color: #005fb8;
-    }
-  </style>
-</head>
-
-<body>
-
-  <header>
-    <!-- Make sure your logo is in 'static/logo-color.png' -->
-    <img src="/static/logo-color.png" alt="Company Logo">
-    <h1>Capacity Planning Dashboard</h1>
-  </header>
-
-  <!-- Constraint Note -->
-  <div class="constraint-note">
-    Note: Assumes ach process can only be run once per day per room.
-  </div>
-
-  <!-- Tab Buttons -->
-  <div class="tab-buttons">
-    <button class="active" onclick="showTab(event, 'tab1')">Capacity Planner</button>
-    <button onclick="showTab(event, 'tab2')">Process Capacity vs Demand</button>
-    <button onclick="showTab(event, 'tab3')">Capacity & Forecast</button>
-  </div>
-
-  <!-- ====================== TAB 1 (App1) ====================== -->
-  <div id="tab1" class="tab-content active-tab">
-    <div class="container">
-
-      <!-- Card 1: Excel Upload -->
-      <p>This tab allows users to input processes and constraints to determine either: (1) the max available throughput based on current process set-ups or 
-          <br> (2) the required inputs (labor, equipement, etc.) per process to meet desired throughput goals. </p>
-
-      <div class="card">
-        <h2>Upload Excel (Optional)</h2>
-        <p>Note: this will override any data entered into Process Table manually.</p>
-        <input type="file" id="excelFile">
-        <button id="uploadExcelBtn">Upload Excel</button>
-        <div id="uploadMsg" style="color:green; margin-top:10px;"></div>
-        <!-- Processing indicator for Excel upload -->
-        <div id="excelProcessing" class="hidden" style="margin-top:10px; color:blue;">Processing Excel...</div>
-      </div>
-
-      <!-- Card 2: Shift Scheduling & Timescale -->
-      <div class="card">
-        <h2>Capacity Variables (Change as Needed)</h2>
-        <br>
-        <div style="margin-bottom: 10px;">
-          <label>Shifts per Day:</label>
-          <input type="number" id="shiftsPerDay" value="1" step="1" min="1">
-          <br>
-          <label>Hours per Shift:</label>
-          <input type="number" id="hoursPerShift" value="8" step="1" min="1">
+    <!-- ====================== TAB 1 (App1) ====================== -->
+    <div id="tab1" class="tab-content active-tab">
+      <div class="container">
+        <!-- Card 1: Excel Upload -->
+        <p>
+          This tab allows users to input processes and constraints to determine either:
+          <br>(1) the max available throughput based on current process set‑ups or
+          <br>(2) the required inputs (labor, equipment, etc.) per process to meet desired throughput goals.
+        </p>
+        <div class="card">
+          <h2>Upload Excel (Optional)</h2>
+          <p>
+            Note: this will override any data entered into the Process Table manually.
+            <br>Click "Upload Excel" after you select your file.
+          </p>
+          <input type="file" id="excelFile">
+          <button id="uploadExcelBtn">Upload Excel</button>
+          <!-- New Download Template Button -->
+          <button id="downloadProcessTemplateBtn" onclick="window.location.href='/download_template/process'">
+            Download Process Template
+          </button>
+          <div id="uploadMsg" style="color:green; margin-top:10px;"></div>
+          <!-- Processing indicator for Excel upload -->
+          <div id="excelProcessing" class="hidden" style="margin-top:10px; color:blue;">
+            Processing Excel...
+          </div>
         </div>
-        <br>
-        <div style="margin-bottom: 10px;">
-          <label>Time Scale:</label>
-          <select id="timescaleSelect">
-            <option value="annual">Annual</option>
-            <option value="monthly" selected>Monthly</option>
-            <option value="weekly">Weekly</option>
-            <option value="daily">Daily</option>
+
+        <!-- Card 2: Shift Scheduling & Timescale -->
+        <div class="card">
+          <h2>Capacity Variables (Change as Needed)</h2>
+          <br>
+          <div style="margin-bottom: 10px;">
+            <label>Shifts per Day:</label>
+            <input type="number" id="shiftsPerDay" value="1" step="1" min="1">
+            <br>
+            <label>Hours per Shift:</label>
+            <input type="number" id="hoursPerShift" value="8" step="1" min="1">
+          </div>
+          <br>
+          <div style="margin-bottom: 10px;">
+            <label>Time Scale:</label>
+            <select id="timescaleSelect">
+              <option value="annual">Annual</option>
+              <option value="monthly" selected>Monthly</option>
+              <option value="weekly">Weekly</option>
+              <option value="daily">Daily</option>
+              <option value="custom">Custom</option>
+            </select>
+            <!-- Custom timescale input (number of days) is hidden by default -->
+            <input type="number" id="customTimescale" class="hidden" placeholder="Enter days" style="width:100px;">
+            <br>
+            <label>Equip Throughput (patients/machine/hr):</label>
+            <input type="number" id="equipThroughput" step="0.1" value="1.0">
+          </div>
+          <br>
+          <div style="margin-bottom: 10px;">
+            <label>Number of Suites (each suite can process only once per day):</label>
+            <input type="number" id="rooms" value="1" step="1" min="1">
+          </div>
+          <br>
+          <div>
+            <label>BSC per Suite:</label>
+            <input type="number" id="maxBSC" value="1" min="1">
+            <br>
+            <label>Incubators per Suite:</label>
+            <input type="number" id="maxIncubators" value="1" min="1">
+          </div>
+          <br>
+          <!-- New fields for current headcount for each department -->
+          <div style="margin-bottom: 10px;">
+            <label>MFG Headcount:</label>
+            <input type="number" id="mfgHeadcount" value="30" step="1" min="0">
+            <br>
+            <label>QC Headcount:</label>
+            <input type="number" id="qcHeadcount" value="30" step="1" min="0">
+            <br>
+            <label>QA Headcount:</label>
+            <input type="number" id="qaHeadcount" value="30" step="1" min="0">
+          </div>
+        </div>
+
+        <!-- Card 3: Process Table -->
+        <div class="card">
+          <h2>Process Table (Manual Entry)</h2>
+          <table id="processTable">
+            <thead>
+              <tr>
+                <th>Process Name</th>
+                <th>Cycle Time (hr/unit)</th>
+                <th>Labor Headcount</th>
+                <th>BSC</th>
+                <th>Incubator</th>
+                <th>Department</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><input type="text" value="Assembly"></td>
+                <td><input type="number" step="0.1" value="0.5"></td>
+                <td><input type="number" step="1" value="10"></td>
+                <td><input type="number" step="1" value="5"></td>
+                <td><input type="number" step="1" value="2"></td>
+                <td>
+                  <select>
+                    <option value="MFG" selected>MFG</option>
+                    <option value="QC">QC</option>
+                    <option value="QA">QA</option>
+                  </select>
+                </td>
+                <td><button class="deleteRow">X</button></td>
+              </tr>
+              <tr>
+                <td><input type="text" value="Quality Control"></td>
+                <td><input type="number" step="0.1" value="0.2"></td>
+                <td><input type="number" step="1" value="4"></td>
+                <td><input type="number" step="1" value="3"></td>
+                <td><input type="number" step="1" value="1"></td>
+                <td>
+                  <select>
+                    <option value="MFG" selected>MFG</option>
+                    <option value="QC">QC</option>
+                    <option value="QA">QA</option>
+                  </select>
+                </td>
+                <td><button class="deleteRow">X</button></td>
+              </tr>
+              <tr>
+                <td><input type="text" value="Packaging"></td>
+                <td><input type="number" step="0.1" value="0.3"></td>
+                <td><input type="number" step="1" value="6"></td>
+                <td><input type="number" step="1" value="2"></td>
+                <td><input type="number" step="1" value="2"></td>
+                <td>
+                  <select>
+                    <option value="MFG" selected>MFG</option>
+                    <option value="QC">QC</option>
+                    <option value="QA">QA</option>
+                  </select>
+                </td>
+                <td><button class="deleteRow">X</button></td>
+              </tr>
+            </tbody>
+          </table>
+          <button id="addRowBtn" style="margin-top: 10px;">Add Process</button>
+        </div>
+
+        <!-- Card 4: Scenario Selection -->
+        <div class="card">
+          <h2>Choose Scenario</h2>
+          <select id="scenarioSelect">
+            <option value="max_throughput">Max Patient Throughput</option>
+            <option value="desired_units">Desired Patient Throughput</option>
           </select>
-          <br>
-          <label>Equip Throughput (patients/machine/hr):</label>
-          <input type="number" id="equipThroughput" step="0.1" value="1.0">
+          <div id="desiredUnitsContainer" class="hidden" style="margin-top:10px;">
+            <label>Desired Patients:</label>
+            <input type="number" id="desiredUnits" step="100" value="1">
+          </div>
+          <br><br>
+          <button id="runCalcBtn">Run Calculation</button>
+          <!-- Processing indicator for calculation -->
+          <div id="calcProcessing" class="hidden" style="margin-top:10px; color:blue;">
+            Processing Calculation...
+          </div>
         </div>
-        <br>
-        <div style="margin-bottom: 10px;">
-          <label>Number of Rooms (each room processes a process only once per day):</label>
-          <input type="number" id="rooms" value="1" step="1" min="1">
-        </div>
-        <br>
-        <div>
-          <label>Max BSC:</label>
-          <input type="number" id="maxBSC" value="1" min="1">
-          <br>
-          <label>Max Incubators:</label>
-          <input type="number" id="maxIncubators" value="1" min="1">
+
+        <!-- Results -->
+        <div class="card">
+          <h2>Results</h2>
+          <div id="message"></div>
+          <img id="heatmapImg" src="" class="hidden" alt="Heatmap">
+          <table id="resultsTable" class="hidden" style="margin-top:20px;">
+            <thead>
+              <tr id="resultsHeaderRow"></tr>
+            </thead>
+            <tbody id="resultsBody"></tbody>
+          </table>
+          <button id="downloadBtn" class="hidden" style="margin-top:10px;">
+            Download Setup CSV
+          </button>
         </div>
       </div>
+    </div>
 
-      <!-- Card 3: Process Table -->
+    <!-- ====================== TAB 2 (Process Utilization) ====================== -->
+    <div id="tab2" class="tab-content">
+      <h2>Charts Analyzing Capacity Against Desired Throughput</h2>
+      <p>
+        This tab allows users to compare the hard capacity data generated from Tab 1 against a desired patient throughput.
+      </p>
       <div class="card">
-        <h2>Process Table (Manual Entry)</h2>
-        <table id="processTable">
-          <thead>
-            <tr>
-              <th>Process Name</th>
-              <th>Cycle Time (hr/unit)</th>
-              <th>Labor Headcount</th>
-              <th>BSC</th>
-              <th>Incubator</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><input type="text" value="Assembly"></td>
-              <td><input type="number" step="0.1" value="0.5"></td>
-              <td><input type="number" step="1" value="10"></td>
-              <td><input type="number" step="1" value="5"></td>
-              <td><input type="number" step="1" value="2"></td>
-              <td><button class="deleteRow">X</button></td>
-            </tr>
-            <tr>
-              <td><input type="text" value="Quality Control"></td>
-              <td><input type="number" step="0.1" value="0.2"></td>
-              <td><input type="number" step="1" value="4"></td>
-              <td><input type="number" step="1" value="3"></td>
-              <td><input type="number" step="1" value="1"></td>
-              <td><button class="deleteRow">X</button></td>
-            </tr>
-            <tr>
-              <td><input type="text" value="Packaging"></td>
-              <td><input type="number" step="0.1" value="0.3"></td>
-              <td><input type="number" step="1" value="6"></td>
-              <td><input type="number" step="1" value="2"></td>
-              <td><input type="number" step="1" value="2"></td>
-              <td><button class="deleteRow">X</button></td>
-            </tr>
-          </tbody>
-        </table>
-        <button id="addRowBtn" style="margin-top: 10px;">Add Process</button>
+        <h3>Desired Patient Throughput</h3>
+        <label>Enter desired number of patients:</label>
+        <input type="number" id="desiredPatients" step="1" value="1">
       </div>
-
-      <!-- Card 4: Scenario Selection --> 
-
       <div class="card">
-        <h2>Choose Scenario</h2>
-        <select id="scenarioSelect">
-          <option value="max_throughput">Max Throughput</option>
-          <option value="desired_units">Desired Patients</option>
+        <h3>View Process Utilization</h3>
+        <p>
+          This gauge shows how each process’s capacity compares to its share of the desired throughput.
+          <br>Click this button again if you change data in the Capacity Planner tab.
+        </p>
+        <button id="visualsBtn">View Charts</button>
+        <div id="visualsResult"></div>
+      </div>
+    </div>
+
+    <!-- ====================== TAB 3 (Forecast) ====================== -->
+    <div id="tab3" class="tab-content">
+      <h2>Forecast View</h2>
+      <p>
+        This tab allows users to use the max capacity data from Tab 1 to compare against the latest monthly demand.
+        <br>Simply upload your demand file below (Month / Demand).
+      </p>
+      <div class="card">
+        <h3>Upload Monthly Demand (Month, Demand):</h3>
+        <p>Click "Upload Forecast" after you select your file</p>
+        <input type="file" id="forecastFile" />
+        <button id="uploadForecastBtn">Upload Forecast</button>
+        <!-- New Download Template Button -->
+        <button id="downloadForecastTemplateBtn" onclick="window.location.href='/download_template/forecast'">
+          Download Forecast Template
+        </button>
+        <p id="forecastMsg"></p>
+      </div>
+      <div class="card">
+        <button id="generateForecastBtn">Generate Forecast Table</button>
+        <p>
+          Will generate a combined table and tables for the number of Suites listed in the Capacity Planner tab.
+          <br>Click this button each time you change data in the Capacity Planner tab.
+        </p>
+      </div>
+      <!-- NEW CARD: Additional Constraints -->
+      <div class="card">
+        <h3>Add Additional Constraints (Planned Downtime)</h3>
+        <label>Reduce Capacity by:</label>
+        <input type="number" step="1" id="capacityReduction" value="0" style="width:80px;">
+        <label> for Month:</label>
+        <select id="capacityMonth">
+          <option value="Jan">Jan</option>
+          <option value="Feb">Feb</option>
+          <option value="Mar">Mar</option>
+          <option value="Apr">Apr</option>
+          <option value="May">May</option>
+          <option value="Jun">Jun</option>
+          <option value="Jul">Jul</option>
+          <option value="Aug">Aug</option>
+          <option value="Sep">Sep</option>
+          <option value="Oct">Oct</option>
+          <option value="Nov">Nov</option>
+          <option value="Dec">Dec</option>
         </select>
-        <div id="desiredUnitsContainer" class="hidden" style="margin-top:10px;">
-          <label>Desired Patients:</label>
-          <input type="number" id="desiredUnits" step="100" value="3000">
-        </div>
-        <br>
-        <br>
-        <button id="runCalcBtn">Run Calculation</button>
-        <!-- Processing indicator for calculation -->
-        <div id="calcProcessing" class="hidden" style="margin-top:10px; color:blue;">Processing Calculation...</div>
+        <button id="addConstraintBtn">Add Additional Constraints</button>
+        <button id="resetConstraintBtn">Reset Constraints</button>
+        <p id="constraintMsg" style="margin-top:10px;"></p>
       </div>
-
-      <!-- Results -->
       <div class="card">
-        <h2>Results</h2>
-        <div id="message"></div>
-        <img id="heatmapImg" src="" class="hidden" alt="Heatmap">
-        <table id="resultsTable" class="hidden" style="margin-top:20px;">
-          <thead>
-            <tr id="resultsHeaderRow"></tr>
-          </thead>
-          <tbody id="resultsBody"></tbody>
-        </table>
-        <button id="downloadBtn" class="hidden" style="margin-top:10px;">Download Setup CSV</button>
+        <div id="forecastResult"></div>
       </div>
     </div>
-  </div> <!-- end tab1 -->
+    <!-- end tab3 -->
 
-  <!-- ====================== TAB 2 (App2) ====================== -->
-  <div id="tab2" class="tab-content">
-    <h2>Charts Analyzing Capacity Against Demand for Each Process</h2>
-    <p>This tab allows users to evaluate individual processes against a process load.</p>
-
-    <div class="card">
-      <h3>Upload Process Data</h3>
-      <input type="file" id="capacityFile"/>
-      <button id="uploadCapBtn">Upload Capacity</button>
-      <p id="capMsg" style="color:green;"></p>
-    </div>
-    <div class="card">
-      <h3>Upload Demand Data</h3>
-      <input type="file" id="demandFile"/>
-      <button id="uploadDemandBtn">Upload Demand</button>
-      <p id="demMsg" style="color:green;"></p>
-    </div>
-
-    <div class="card">
-      <h3>View Bullet & Gauge</h3>
-      <button id="visualsBtn">View Charts</button>
-    </div>
-  </div> <!-- end tab2 -->
-
-  <!-- ====================== TAB 3 (Forecast) ====================== -->
-  <div id="tab3" class="tab-content">
-    <h2>Forecast View</h2>
-    <p>This tab allows users to use the max capacity data generated from Tab 1 to compare against the latest demand (monthly).
-      <br> Simply upload your demand file below (Month / Demand).</p>
-
-    <div class="card">
-      <h3>Upload Monthly Demand (Month, Demand):</h3>
-      <input type="file" id="forecastFile" />
-      <button id="uploadForecastBtn">Upload Forecast</button>
-      <p id="forecastMsg"></p>
-    </div>
-
-    <div class="card">
-      <button id="generateForecastBtn">Generate Forecast Table</button>
-      <p>Will Generate a Combined Table and Tables for # of CPUS Listed in Tab 1</p>
-    </div>
-
-    <div class="card">
-      <div id="forecastResult"></div>
-    </div>
-  </div> <!-- end tab3 -->
-
-  <script>
-    // ----- Tab Logic -----
-    function showTab(event, tabId) {
-      // Remove 'active' class from all tab buttons
-      const allButtons = document.querySelectorAll('.tab-buttons button');
-      allButtons.forEach(btn => btn.classList.remove('active'));
-
-      // Hide all tab-content
-      const allTabs = document.querySelectorAll('.tab-content');
-      allTabs.forEach(tab => tab.classList.remove('active-tab'));
-
-      // Highlight the clicked button
-      event.currentTarget.classList.add('active');
-
-      // Show the chosen tab
-      document.getElementById(tabId).classList.add('active-tab');
-    }
-
-    // ----- Scenario (Tab 1) Logic -----
-    const scenarioSelect = document.getElementById('scenarioSelect');
-    const desiredUnitsContainer = document.getElementById('desiredUnitsContainer');
-
-    scenarioSelect.addEventListener('change', () => {
-      if (scenarioSelect.value === 'desired_units') {
-        desiredUnitsContainer.classList.remove('hidden');
-      } else {
-        desiredUnitsContainer.classList.add('hidden');
-      }
-    });
-
-    // Add new row to process table
-    document.getElementById('addRowBtn').addEventListener('click', () => {
-      const tbody = document.querySelector('#processTable tbody');
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td><input type="text" value="New Process"></td>
-        <td><input type="number" step="0.1" value="1.0"></td>
-        <td><input type="number" step="1" value="5"></td>
-        <td><input type="number" step="1" value="3"></td>
-        <td><input type="number" step="1" value="2"></td>
-        <td><button class="deleteRow">X</button></td>
-      `;
-      tbody.appendChild(tr);
-    });
-
-    // Delete row in process table
-    document.addEventListener('click', (e) => {
-      if (e.target.classList.contains('deleteRow')) {
-        e.target.closest('tr').remove();
-      }
-    });
-
-    // Upload Excel for Tab 1
-    document.getElementById('uploadExcelBtn').addEventListener('click', () => {
-      const fileInput = document.getElementById('excelFile');
-      const msg = document.getElementById('uploadMsg');
-      const processingDiv = document.getElementById('excelProcessing');
-      if (!fileInput.files[0]) {
-        msg.textContent = "No file selected. Please choose an Excel file.";
-        msg.style.color = 'red';
-        return;
-      }
-
-      // Show processing indicator
-      processingDiv.classList.remove('hidden');
-
-      console.log("Uploading Excel file:", fileInput.files[0]);
-      
-      const formData = new FormData();
-      formData.append('excelFile', fileInput.files[0]);
-
-      fetch('/upload_excel', {
-        method: 'POST',
-        body: formData
-      })
-      .then(r => r.json())
-      .then(data => {
-        processingDiv.classList.add('hidden');  // Hide processing indicator when done
-        if (data.error) {
-          msg.textContent = data.error;
-          msg.style.color = 'red';
+    <script>
+      // Set up timescale listener
+      const timescaleSelect = document.getElementById('timescaleSelect');
+      const customTimescale = document.getElementById('customTimescale');
+      timescaleSelect.addEventListener('change', () => {
+        if (timescaleSelect.value === 'custom') {
+          customTimescale.classList.remove('hidden');
         } else {
-          // Clear existing rows and add new rows from Excel data
-          const tbody = document.querySelector('#processTable tbody');
-          tbody.innerHTML = '';
-          data.processData.forEach(proc => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-              <td><input type="text" value="${proc.name}"></td>
-              <td><input type="number" step="0.1" value="${proc.cycle_time}"></td>
-              <td><input type="number" step="1" value="${proc.labor}"></td>
-              <td><input type="number" step="1" value="${proc.bsc}"></td>
-              <td><input type="number" step="1" value="${proc.incubator}"></td>
-              <td><button class="deleteRow">X</button></td>
-            `;
-            tbody.appendChild(tr);
-          });
-          msg.textContent = 'Excel data loaded!';
-          msg.style.color = 'green';
+          customTimescale.classList.add('hidden');
         }
-      })
-      .catch(err => {
-        console.log(err);
-        msg.textContent = "An error occurred during upload.";
-        msg.style.color = 'red';
       });
-    });
 
-    // Run Calculation for Tab 1
-    document.getElementById('runCalcBtn').addEventListener('click', () => {
-      const calcProcessingDiv = document.getElementById('calcProcessing');
-     // Show processing indicator
-     calcProcessingDiv.classList.remove('hidden');
-
-      // Gather user inputs
-      const shiftsPerDay = parseFloat(document.getElementById('shiftsPerDay').value);
-      const hoursPerShift = parseFloat(document.getElementById('hoursPerShift').value);
-      const timescale = document.getElementById('timescaleSelect').value;
-      const equipThroughput = parseFloat(document.getElementById('equipThroughput').value);
-      const scenario = document.getElementById('scenarioSelect').value;
-      const roomsVal = parseFloat(document.getElementById('rooms').value) || 1;
-      const maxBscVal = parseFloat(document.getElementById('maxBSC').value) || 1;
-      const maxIncVal = parseFloat(document.getElementById('maxIncubators').value) || 1;
-
-      let desiredUnitsVal = 0;
-      if (scenario === 'desired_units') {
-        desiredUnitsVal = parseFloat(document.getElementById('desiredUnits').value);
+      function get_days_for_timescale(timescale) {
+        if (timescale === "annual") return 365;
+        else if (timescale === "monthly") {
+          const now = new Date();
+          return new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        } else if (timescale === "weekly") return 7;
+        else if (timescale === "daily") return 1;
+        return 30;
       }
 
-      // Gather process data
-      const rows = document.querySelectorAll('#processTable tbody tr');
-      const processes = [];
-      rows.forEach(row => {
-        const inputs = row.querySelectorAll('input');
-        processes.push({
-          name: inputs[0].value,
-          cycle_time: inputs[1].value,
-          labor: inputs[2].value,
-          bsc: inputs[3].value,
-          incubator: inputs[4].value
-        });
+      // ----- Tab Logic -----
+      function showTab(event, tabId) {
+        const allButtons = document.querySelectorAll('.tab-buttons button');
+        allButtons.forEach(btn => btn.classList.remove('active'));
+        const allTabs = document.querySelectorAll('.tab-content');
+        allTabs.forEach(tab => tab.classList.remove('active-tab'));
+        event.currentTarget.classList.add('active');
+        document.getElementById(tabId).classList.add('active-tab');
+      }
+
+      // ----- Scenario (Tab 1) Logic -----
+      const scenarioSelect = document.getElementById('scenarioSelect');
+      const desiredUnitsContainer = document.getElementById('desiredUnitsContainer');
+      scenarioSelect.addEventListener('change', () => {
+        if (scenarioSelect.value === 'desired_units') {
+          desiredUnitsContainer.classList.remove('hidden');
+        } else {
+          desiredUnitsContainer.classList.add('hidden');
+        }
       });
 
-      // Build the payload
-      const payload = {
-        scenario: scenario,
-        shifts_per_day: shiftsPerDay,
-        hours_per_shift: hoursPerShift,
-        timescale: timescale,
-        equip_throughput: equipThroughput,
-        rooms: roomsVal,
-        max_bsc: maxBscVal,
-        max_incubators: maxIncVal,
-        processes: processes,
-        desired_units: desiredUnitsVal
-      };
+      // Add new row to process table
+      document.getElementById('addRowBtn').addEventListener('click', () => {
+        const tbody = document.querySelector('#processTable tbody');
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><input type="text" value="New Process"></td>
+          <td><input type="number" step="0.1" value="1.0"></td>
+          <td><input type="number" step="1" value="5"></td>
+          <td><input type="number" step="1" value="3"></td>
+          <td><input type="number" step="1" value="2"></td>
+          <td>
+            <select>
+              <option value="MFG" selected>MFG</option>
+              <option value="QC">QC</option>
+              <option value="QA">QA</option>
+            </select>
+          </td>
+          <td><button class="deleteRow">X</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
 
-      console.log("Payload:", payload);
+      // Delete row in process table
+      document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('deleteRow')) {
+          e.target.closest('tr').remove();
+        }
+      });
 
-      // POST to /calculate
-      fetch('/calculate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      })
-      .then(r => r.json())
-      .then(data => {
-        // Hide the processing indicator when the request is complete
-        calcProcessingDiv.classList.add('hidden');
-
-        const msgDiv = document.getElementById('message');
-        const heatmapImg = document.getElementById('heatmapImg');
-        const resultsTable = document.getElementById('resultsTable');
-        const downloadBtn = document.getElementById('downloadBtn');
-
-        msgDiv.textContent = '';
-        heatmapImg.classList.add('hidden');
-        resultsTable.classList.add('hidden');
-        downloadBtn.classList.add('hidden');
-
-        if (data.error) {
-          msgDiv.style.color = 'red';
-          msgDiv.textContent = data.error;
+      // Upload Excel for Tab 1
+      document.getElementById('uploadExcelBtn').addEventListener('click', () => {
+        const fileInput = document.getElementById('excelFile');
+        const msg = document.getElementById('uploadMsg');
+        const processingDiv = document.getElementById('excelProcessing');
+        if (!fileInput.files[0]) {
+          msg.textContent = "No file selected. Please choose an Excel file.";
+          msg.style.color = 'red';
           return;
         }
-        msgDiv.style.color = '#333';
-
-        if (scenario === 'max_throughput') {
-          msgDiv.textContent = data.message || '';
-          if (data.heatmap) {
-            heatmapImg.src = 'data:image/png;base64,' + data.heatmap;
-            heatmapImg.classList.remove('hidden');
-          }
-        } else if (scenario === 'desired_units') {
-          msgDiv.textContent = `For ${desiredUnitsVal} units/${timescale}, see needed labor/equipment below.`;
-          const results = data.results || [];
-          if (results.length > 0) {
-            resultsTable.classList.remove('hidden');
-            const headerRow = document.getElementById('resultsHeaderRow');
-            headerRow.innerHTML = '';
-            const body = document.getElementById('resultsBody');
-            body.innerHTML = '';
-
-            const cols = Object.keys(results[0]);
-            cols.forEach(col => {
-              const th = document.createElement('th');
-              th.textContent = col;
-              headerRow.appendChild(th);
-            });
-            results.forEach(obj => {
-              const tr = document.createElement('tr');
-              cols.forEach(col => {
-                const td = document.createElement('td');
-                td.textContent = obj[col];
-                tr.appendChild(td);
+        processingDiv.classList.remove('hidden');
+        console.log("Uploading Excel file:", fileInput.files[0]);
+        const formData = new FormData();
+        formData.append('excelFile', fileInput.files[0]);
+        fetch('/upload_excel', {
+          method: 'POST',
+          body: formData
+        })
+          .then(r => r.json())
+          .then(data => {
+            processingDiv.classList.add('hidden');
+            if (data.error) {
+              msg.textContent = data.error;
+              msg.style.color = 'red';
+            } else {
+              const tbody = document.querySelector('#processTable tbody');
+              tbody.innerHTML = '';
+              data.processData.forEach(proc => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                  <td><input type="text" value="${proc.name}"></td>
+                  <td><input type="number" step="0.1" value="${proc.cycle_time}"></td>
+                  <td><input type="number" step="1" value="${proc.labor}"></td>
+                  <td><input type="number" step="1" value="${proc.bsc}"></td>
+                  <td><input type="number" step="1" value="${proc.incubator}"></td>
+                  <td>
+                    <select>
+                      <option value="MFG" ${proc.department && proc.department.toUpperCase() === "MFG" ? 'selected' : ''}>MFG</option>
+                      <option value="QC" ${proc.department && proc.department.toUpperCase() === "QC" ? 'selected' : ''}>QC</option>
+                      <option value="QA" ${proc.department && proc.department.toUpperCase() === "QA" ? 'selected' : ''}>QA</option>
+                    </select>
+                  </td>
+                  <td><button class="deleteRow">X</button></td>
+                `;
+                tbody.appendChild(tr);
               });
-              body.appendChild(tr);
+              msg.textContent = 'Excel data loaded!';
+              msg.style.color = 'green';
+            }
+          })
+          .catch(err => {
+            console.log(err);
+            msg.textContent = "An error occurred during upload.";
+            msg.style.color = 'red';
+          });
+      });
+
+      // Run Calculation for Tab 1
+      document.getElementById('runCalcBtn').addEventListener('click', () => {
+        const calcProcessingDiv = document.getElementById('calcProcessing');
+        calcProcessingDiv.classList.remove('hidden');
+
+        const shiftsPerDay = parseFloat(document.getElementById('shiftsPerDay').value);
+        const hoursPerShift = parseFloat(document.getElementById('hoursPerShift').value);
+        const timescale = timescaleSelect.value;
+        let daysPerPeriod;
+        if (timescale === 'custom') {
+          daysPerPeriod = parseFloat(customTimescale.value) || 30;
+        } else {
+          daysPerPeriod = get_days_for_timescale(timescale);
+        }
+        const equipThroughput = parseFloat(document.getElementById('equipThroughput').value);
+        const scenario = document.getElementById('scenarioSelect').value;
+        const roomsVal = parseFloat(document.getElementById('rooms').value) || 1;
+        const maxBscVal = parseFloat(document.getElementById('maxBSC').value) || 1;
+        const maxIncVal = parseFloat(document.getElementById('maxIncubators').value) || 1;
+
+        // Headcount fields
+        const mfgHeadcount = parseFloat(document.getElementById('mfgHeadcount').value) || 0;
+        const qcHeadcount = parseFloat(document.getElementById('qcHeadcount').value) || 0;
+        const qaHeadcount = parseFloat(document.getElementById('qaHeadcount').value) || 0;
+
+        let desiredUnitsVal = 0;
+        if (scenario === 'desired_units') {
+          desiredUnitsVal = parseFloat(document.getElementById('desiredUnits').value);
+        }
+
+        const rows = document.querySelectorAll('#processTable tbody tr');
+        const processes = [];
+        rows.forEach(row => {
+          const inputs = row.querySelectorAll('input');
+          const selectElem = row.querySelector('select');
+          processes.push({
+            name: inputs[0].value,
+            cycle_time: inputs[1].value,
+            labor: inputs[2].value,
+            bsc: inputs[3].value,
+            incubator: inputs[4].value,
+            department: selectElem ? selectElem.value : "MFG"
+          });
+        });
+
+        const payload = {
+          scenario: scenario,
+          shifts_per_day: shiftsPerDay,
+          hours_per_shift: hoursPerShift,
+          timescale: timescale,
+          equip_throughput: equipThroughput,
+          rooms: roomsVal,
+          max_bsc: maxBscVal,
+          max_incubators: maxIncVal,
+          processes: processes,
+          desired_units: desiredUnitsVal,
+          mfg_headcount: mfgHeadcount,
+          qc_headcount: qcHeadcount,
+          qa_headcount: qaHeadcount
+        };
+
+        console.log("Payload:", payload);
+
+        fetch('/calculate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        })
+          .then(r => r.json())
+          .then(data => {
+            calcProcessingDiv.classList.add('hidden');
+            const msgDiv = document.getElementById('message');
+            const heatmapImg = document.getElementById('heatmapImg');
+            const resultsTable = document.getElementById('resultsTable');
+            const downloadBtn = document.getElementById('downloadBtn');
+            msgDiv.textContent = '';
+            heatmapImg.classList.add('hidden');
+            resultsTable.classList.add('hidden');
+            downloadBtn.classList.add('hidden');
+            if (data.error) {
+              msgDiv.style.color = 'red';
+              msgDiv.textContent = data.error;
+              return;
+            }
+            msgDiv.style.color = '#333';
+            if (scenario === 'max_throughput') {
+              let throughput = data.adjusted_throughput;
+              if (typeof throughput === 'number') {
+                throughput = throughput.toFixed(1);
+              } else {
+                throughput = "N/A";
+              }
+              let fullMsg = "Hard Capacity (Equipment & Room Constraints): " +
+                data.hard_capacity.toFixed(1) + " patients. Theoretical Capacity (based on headcount): " +
+                throughput + " patients.";
+              msgDiv.textContent = fullMsg;
+              if (data.heatmap) {
+                heatmapImg.src = 'data:image/png;base64,' + data.heatmap;
+                heatmapImg.classList.remove('hidden');
+              }
+            } else if (scenario === 'desired_units') {
+              msgDiv.textContent = `For ${desiredUnitsVal} units/${timescale}, Total Needed Labor: ` + data.total_needed_labor;
+              const results = data.results || [];
+              if (results.length > 0) {
+                resultsTable.classList.remove('hidden');
+                const headerRow = document.getElementById('resultsHeaderRow');
+                headerRow.innerHTML = '';
+                const body = document.getElementById('resultsBody');
+                body.innerHTML = '';
+                const cols = Object.keys(results[0]);
+                cols.forEach(col => {
+                  const th = document.createElement('th');
+                  th.textContent = col;
+                  headerRow.appendChild(th);
+                });
+                results.forEach(obj => {
+                  const tr = document.createElement('tr');
+                  cols.forEach(col => {
+                    const td = document.createElement('td');
+                    td.textContent = obj[col];
+                    tr.appendChild(td);
+                  });
+                  body.appendChild(tr);
+                });
+              }
+              if (data.csv_data) {
+                downloadBtn.classList.remove('hidden');
+                downloadBtn.onclick = () => {
+                  const formData = new FormData();
+                  formData.append('csv_data', data.csv_data);
+                  fetch('/download_csv', { method: 'POST', body: formData })
+                    .then(async resp => {
+                      const blob = await resp.blob();
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = 'ideal_setup.csv';
+                      document.body.appendChild(a);
+                      a.click();
+                      a.remove();
+                    });
+                };
+              }
+            }
+          })
+          .catch(err => {
+            calcProcessingDiv.classList.add('hidden');
+            console.log(err);
+          });
+      });
+
+      // ----- Forecast (Tab 3) Logic -----
+      document.getElementById("uploadForecastBtn").addEventListener("click", () => {
+        const fileInput = document.getElementById("forecastFile");
+        if (!fileInput.files[0]) return;
+        const formData = new FormData();
+        formData.append("forecastFile", fileInput.files[0]);
+        fetch("/upload_forecast_demand", { method: "POST", body: formData })
+          .then(r => r.json())
+          .then(data => {
+            const msg = document.getElementById("forecastMsg");
+            if (data.error) {
+              msg.style.color = "red";
+              msg.textContent = data.error;
+            } else {
+              msg.style.color = "green";
+              msg.textContent = data.message;
+            }
+          })
+          .catch(err => console.log(err));
+      });
+
+      function showTotal() {
+        document.querySelectorAll('.capCell').forEach(td => {
+          const baseCap = parseFloat(td.getAttribute('data-basecap')) || 0;
+          td.textContent = baseCap;
+        });
+        document.querySelectorAll('.surplusCell').forEach(td => {
+          const baseSurp = parseFloat(td.getAttribute('data-basesurplus')) || 0;
+          td.textContent = baseSurp;
+        });
+      }
+
+      function showByRoom() {
+        const rooms = window.forecastRooms || 1;
+        document.querySelectorAll('.capCell').forEach(td => {
+          const baseCap = parseFloat(td.getAttribute('data-basecap')) || 0;
+          td.textContent = (baseCap / rooms).toFixed(1);
+        });
+        document.querySelectorAll('.surplusCell').forEach(td => {
+          const baseSurp = parseFloat(td.getAttribute('data-basesurplus')) || 0;
+          td.textContent = (baseSurp / rooms).toFixed(1);
+        });
+      }
+
+      window.capacityConstraints = {};
+
+      function regenerateForecastTable() {
+        fetch("/generate_forecast_table", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ constraints: window.capacityConstraints })
+        })
+          .then(res => res.text())
+          .then(htmlSnippet => {
+            document.getElementById("forecastResult").innerHTML = htmlSnippet;
+          })
+          .catch(err => {
+            console.log("Error generating forecast table:", err);
+          });
+      }
+
+      document.getElementById("addConstraintBtn").addEventListener("click", () => {
+        const reductionInput = document.getElementById("capacityReduction");
+        const monthSelect = document.getElementById("capacityMonth");
+        const msg = document.getElementById("constraintMsg");
+        const reductionVal = parseFloat(reductionInput.value) || 0;
+        const monthVal = monthSelect.value;
+        window.capacityConstraints[monthVal] = reductionVal;
+        msg.style.color = "green";
+        msg.textContent = `Added a capacity reduction of ${reductionVal} for ${monthVal}.`;
+        regenerateForecastTable();
+      });
+
+      document.getElementById("resetConstraintBtn").addEventListener("click", () => {
+        window.capacityConstraints = {};
+        const msg = document.getElementById("constraintMsg");
+        msg.style.color = "green";
+        msg.textContent = "Constraints have been reset to original.";
+        regenerateForecastTable();
+      });
+
+      document.getElementById("generateForecastBtn").addEventListener("click", regenerateForecastTable);
+
+      document.getElementById("visualsBtn").addEventListener("click", () => {
+        const desiredPatients = parseFloat(document.getElementById("desiredPatients").value) || 0;
+        fetch('/visuals', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ desired_patients: desiredPatients })
+        })
+          .then(res => res.json())
+          .then(charts => {
+            const container = document.getElementById("visualsResult");
+            container.innerHTML = ""; // Clear previous charts
+            charts.forEach((chartDef, index) => {
+              const chartDiv = document.createElement("div");
+              chartDiv.id = "chart_" + index;
+              chartDiv.style.width = "100%";
+              chartDiv.style.height = "400px";
+              container.appendChild(chartDiv);
+              Plotly.newPlot(chartDiv, chartDef.data, chartDef.layout);
             });
-          }
-          if (data.csv_data) {
-            downloadBtn.classList.remove('hidden');
-            downloadBtn.onclick = () => {
-              const formData = new FormData();
-              formData.append('csv_data', data.csv_data);
-              fetch('/download_csv', { method:'POST', body: formData })
-              .then(async resp => {
-                const blob = await resp.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'ideal_setup.csv';
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-              });
-            };
-          }
-        }
-      })
-      .catch(err => {
-        calcProcessingDiv.classList.add('hidden');
-        console.log(err);
+          })
+          .catch(err => console.log("Error in /visuals fetch:", err));
       });
-    });
-
-    // ----- Tab 2 Logic -----
-    document.getElementById("uploadCapBtn").addEventListener("click", function() {
-      const fileInput = document.getElementById("capacityFile");
-      if (!fileInput.files[0]) return;
-
-      const formData = new FormData();
-      formData.append("capacityFile", fileInput.files[0]);
-
-      fetch("/upload_capacity", { method:"POST", body: formData })
-      .then(res => res.json())
-      .then(data => {
-        const capMsg = document.getElementById("capMsg");
-        if (data.error) {
-          capMsg.style.color = 'red';
-          capMsg.textContent = data.error;
-        } else {
-          capMsg.style.color = 'green';
-          capMsg.textContent = data.message;
-        }
-      });
-    });
-
-    document.getElementById("uploadDemandBtn").addEventListener("click", function() {
-      const fileInput = document.getElementById("demandFile");
-      if (!fileInput.files[0]) return;
-
-      const formData = new FormData();
-      formData.append("demandFile", fileInput.files[0]);
-
-      fetch("/upload_demand", { method:"POST", body: formData })
-      .then(res => res.json())
-      .then(data => {
-        const demMsg = document.getElementById("demMsg");
-        if (data.error) {
-          demMsg.style.color = 'red';
-          demMsg.textContent = data.error;
-        } else {
-          demMsg.style.color = 'green';
-          demMsg.textContent = data.message;
-        }
-      });
-    });
-
-    document.getElementById("visualsBtn").addEventListener("click", function() {
-      window.location.href = "/visuals";
-    });
-
-    // ----- Forecast (Tab 3) Logic -----
-    document.getElementById("uploadForecastBtn").addEventListener("click", () => {
-      const fileInput = document.getElementById("forecastFile");
-      if (!fileInput.files[0]) return;
-
-      const formData = new FormData();
-      formData.append("forecastFile", fileInput.files[0]);
-
-      fetch("/upload_forecast_demand", { method:'POST', body: formData })
-      .then(r => r.json())
-      .then(data => {
-        const msg = document.getElementById('forecastMsg');
-        if (data.error) {
-          msg.style.color = 'red';
-          msg.textContent = data.error;
-        } else {
-          msg.style.color = 'green';
-          msg.textContent = data.message;
-        }
-      })
-      .catch(err => console.log(err));
-    });
-
-    // Toggle logic for forecast table
-    function showTotal() {
-      document.querySelectorAll('.capCell').forEach(td => {
-        const baseCap = parseFloat(td.getAttribute('data-basecap')) || 0;
-        td.textContent = baseCap;
-      });
-      document.querySelectorAll('.surplusCell').forEach(td => {
-        const baseSurp = parseFloat(td.getAttribute('data-basesurplus')) || 0;
-        td.textContent = baseSurp;
-      });
-    }
-
-    function showByRoom() {
-      // If needed, read #rooms from your app1_capacity_result or store it globally
-      const rooms = window.forecastRooms || 1;
-
-      document.querySelectorAll('.capCell').forEach(td => {
-        const baseCap = parseFloat(td.getAttribute('data-basecap')) || 0;
-        td.textContent = (baseCap / rooms).toFixed(1);
-      });
-      document.querySelectorAll('.surplusCell').forEach(td => {
-        const baseSurp = parseFloat(td.getAttribute('data-basesurplus')) || 0;
-        td.textContent = (baseSurp / rooms).toFixed(1);
-      });
-    }
-
-    // Generate Forecast Table
-    document.getElementById("generateForecastBtn").addEventListener("click", function() {
-      fetch("/generate_forecast_table")
-      .then(res => res.text())
-      .then(htmlSnippet => {
-        document.getElementById("forecastResult").innerHTML = htmlSnippet;
-      })
-      .catch(err => {
-        console.log("Error generating forecast table:", err);
-      });
-    });
-  </script>
-</body>
+    </script>
+  </body>
 </html>
