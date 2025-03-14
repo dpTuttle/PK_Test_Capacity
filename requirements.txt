@@ -7,3 +7,4 @@ gunicorn
 openpyxl
 numpy
 requests
+XlsxWriter>=1.3
