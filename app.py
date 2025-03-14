@@ -558,7 +558,7 @@ def download_template(template_type):
     output.seek(0)
     return send_file(
         output,
-        attachment_filename=filename,
+        download_name=filename,
         as_attachment=True,
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
